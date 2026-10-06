@@ -112,10 +112,10 @@ html,body { margin:0; height:100%; background:linear-gradient(160deg,#0c4a6e 0%,
 <body>
 <div class="screen">
     <div class="top">
+        <?= poweredBy() ?>
         <?php if ($logo): ?><img src="<?= $h($logo) ?>" alt="<?= $h($brand) ?>"><?php else: ?><div class="brand"><?= $h($brand) ?></div><?php endif; ?>
         <div class="clock"><div class="time" id="time">--:--</div><div class="date" id="date"></div></div>
         <div class="wnow" id="wnow" style="display:none"><div class="ic" id="wIc"></div><div><div class="t" id="wT"></div><div class="c" id="wC"></div></div></div>
-        <?= poweredBy() ?>
     </div>
 
     <div class="mid">
