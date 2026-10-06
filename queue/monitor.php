@@ -27,6 +27,7 @@ $h     = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Monitor eliminacode</title>
+<?= brandHeadTags() ?>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root { --bg:#082f49; --panel:#0c4a6e; --panel2:#075985; --text:#fff; --muted:rgba(224,242,254,.75); --accent:#facc15; }
@@ -39,6 +40,9 @@ html,body { margin:0; height:100%; background:linear-gradient(160deg,#0c4a6e 0%,
 .top img { max-height:8vh; max-width:22vw; }
 .top .brand { font-size:4vh; font-weight:800; }
 .top .clock { margin-left:auto; text-align:right; }
+/* Upgrade logo on a white plate: its grey lettering needs a light background */
+.top .powered { display:flex; flex-direction:column; align-items:center; gap:.3vh; background:#fff; border-radius:12px; padding:.8vh 1vw; color:#64748b; font-size:1.2vh; }
+.top .powered img { height:3.6vh; max-width:none; width:auto; display:block; }
 .top .time { font-size:5.4vh; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; }
 .top .date { font-size:2vh; color:var(--muted); text-transform:capitalize; }
 .top .wnow { display:flex; align-items:center; gap:1vw; padding-left:2vw; border-left:2px solid rgba(255,255,255,.12); }
@@ -111,6 +115,7 @@ html,body { margin:0; height:100%; background:linear-gradient(160deg,#0c4a6e 0%,
         <?php if ($logo): ?><img src="<?= $h($logo) ?>" alt="<?= $h($brand) ?>"><?php else: ?><div class="brand"><?= $h($brand) ?></div><?php endif; ?>
         <div class="clock"><div class="time" id="time">--:--</div><div class="date" id="date"></div></div>
         <div class="wnow" id="wnow" style="display:none"><div class="ic" id="wIc"></div><div><div class="t" id="wT"></div><div class="c" id="wC"></div></div></div>
+        <?= poweredBy() ?>
     </div>
 
     <div class="mid">

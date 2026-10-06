@@ -17,6 +17,7 @@ $navLink     = static fn(string $href, string $icon, string $label) =>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= h($pageTitle) ?> - <?= h(appName()) ?></title>
+    <?= brandHeadTags() ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
@@ -39,7 +40,7 @@ $navLink     = static fn(string $href, string $icon, string $label) =>
             <?php if ($logo = brandLogoUrl()): ?>
                 <span class="nav-logo"><img src="<?= h($logo) ?>" alt="<?= h(appName()) ?>"></span>
             <?php else: ?>
-                <i class="fas fa-ticket"></i>
+                <span class="nav-logo nav-mark"><img src="/assets/brand/upgrade-mark.png" alt="Upgrade"></span>
                 <span><?= h(appName()) ?></span>
             <?php endif; ?>
         </div>

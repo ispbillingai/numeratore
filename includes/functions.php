@@ -39,6 +39,20 @@ function brandLogoUrl(): ?string
     return is_file($f) ? '/assets/img/logo.png?v=' . filemtime($f) : null;
 }
 
+/** Favicon and phone home-screen icon: the Upgrade mark (assets/brand, as in the chiamata app). */
+function brandHeadTags(): string
+{
+    return '<link rel="icon" type="image/png" href="/assets/brand/icon-192.png">'
+        . '<link rel="apple-touch-icon" href="/assets/brand/icon-180.png">';
+}
+
+/** Small "powered by Upgrade" line: login, staff pages, totem and monitor. */
+function poweredBy(string $class = ''): string
+{
+    return '<div class="powered ' . h($class) . '"><span>powered by</span>'
+        . '<img src="/assets/brand/upgrade-logo.png" alt="Upgrade" width="96" height="31"></div>';
+}
+
 function isLoggedIn(): bool
 {
     return isset($_SESSION['user_id']);

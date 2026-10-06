@@ -35,6 +35,7 @@ $logo = brandLogoUrl();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accedi - <?= h(appName()) ?></title>
+    <?= brandHeadTags() ?>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/assets/css/style.css?v=<?= @filemtime(__DIR__ . '/assets/css/style.css') ?>">
@@ -45,7 +46,7 @@ $logo = brandLogoUrl();
             <?php if ($logo): ?>
                 <img class="login-logo-img" src="<?= h($logo) ?>" alt="<?= h(appName()) ?>">
             <?php else: ?>
-                <i class="fas fa-ticket"></i>
+                <img class="login-brand" src="/assets/brand/upgrade-logo.png" alt="Upgrade" width="220" height="72">
                 <h1><?= h(appName()) ?></h1>
             <?php endif; ?>
             <p class="text-muted">Sistema eliminacode</p>
@@ -66,6 +67,7 @@ $logo = brandLogoUrl();
             </div>
             <button type="submit" class="btn btn-primary btn-lg btn-block"><i class="fas fa-sign-in-alt"></i> Accedi</button>
         </form>
+        <?php if ($logo): ?><?= poweredBy() ?><?php endif; ?>
     </div>
 </body>
 </html>

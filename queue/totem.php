@@ -28,6 +28,7 @@ $h        = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Totem eliminacode</title>
+<?= brandHeadTags() ?>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root { --bg:#e0f2fe; --card:#fff; --text:#0c4a6e; --muted:#3b7ea6; }
@@ -37,6 +38,8 @@ html,body { margin:0; height:100%; background:linear-gradient(160deg,#f0f9ff 0%,
 .head { text-align:center; }
 .head img { max-height:14vh; max-width:60vw; }
 .head .brand { font-size:5vh; font-weight:800; }
+.powered { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:auto; color:var(--muted); font-size:1.6vh; }
+.powered img { height:3.2vh; width:auto; display:block; }
 h1 { font-size:5.5vh; margin:1vh 0 0; font-weight:800; }
 .sub { color:var(--muted); font-size:2.6vh; margin-top:.8vh; }
 .services { flex:1; width:100%; max-width:1100px; display:grid; gap:2.5vh; align-content:center;
@@ -90,6 +93,7 @@ h1 { font-size:5.5vh; margin:1vh 0 0; font-weight:800; }
         <?php endforeach; ?>
         <?php if (!$services): ?><div class="empty">Nessun servizio attivo.</div><?php endif; ?>
     </div>
+    <?= poweredBy() ?>
 </div>
 
 <div class="overlay" id="overlay">
