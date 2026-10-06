@@ -96,6 +96,12 @@ $inAdmin = $currentUser && ($currentUser['role'] ?? '') === 'admin'
                 </a>
             <?php endif; ?>
 
+            <?php if (hasRole(['admin', 'cashier', 'waiter'])): ?>
+                <a href="/queue/operator.php" class="<?= ($_SERVER['PHP_SELF'] ?? '') === '/queue/operator.php' ? 'active' : '' ?>">
+                    <i class="fas fa-ticket"></i> Eliminacode
+                </a>
+            <?php endif; ?>
+
             <?php if (hasRole(['admin', 'kitchen'])): ?>
                 <a href="/kitchen/index.php" class="<?= strpos($currentPage, 'kitchen') !== false ? 'active' : '' ?>">
                     <i class="fas fa-fire-burner"></i> <?= te('nav_kitchen') ?>
@@ -184,6 +190,7 @@ $inAdmin = $currentUser && ($currentUser['role'] ?? '') === 'admin'
             <a href="/admin/payment-gateways.php" class="<?= $currentPage === 'payment-gateways' ? 'active' : '' ?>"><i class="fas fa-credit-card"></i> <?= te('payment_gateways') ?></a>
             <a href="/admin/activity.php" class="<?= $currentPage === 'activity' ? 'active' : '' ?>"><i class="fas fa-history"></i> <?= te('activity') ?></a>
             <a href="/admin/settings.php" class="<?= $currentPage === 'settings' ? 'active' : '' ?>"><i class="fas fa-cog"></i> <?= te('settings') ?></a>
+            <a href="/admin/queue.php" class="<?= ($_SERVER['PHP_SELF'] ?? '') === '/admin/queue.php' ? 'active' : '' ?>"><i class="fas fa-ticket"></i> Eliminacode</a>
             <a href="/admin/berkel.php" class="<?= $currentPage === 'berkel' ? 'active' : '' ?>"><i class="fas fa-scale-balanced"></i> <?= te('berkel_title') ?></a>
         </aside>
         <?php endif; ?>

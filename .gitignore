@@ -8,6 +8,7 @@ config/devices.php
 assets/uploads/menu/*
 !assets/uploads/menu/.gitkeep
 assets/uploads/campaigns/*
+assets/uploads/queue/*
 
 # OS / editor cruft
 .DS_Store
