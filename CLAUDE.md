@@ -16,10 +16,9 @@ fiscal printing, card payments (Epson RT protocol 17 / Dojo), Glovo orders, "Cli
   MariaDB 10.11), SSH as root. Credentials and the plink one-liner are in Claude's local memory
   `pub-server.md` (`C:\Users\magom\.claude\projects\f--numeratore\memory\`), never in git.
 - App folder: `/var/www/html/numeratore` (git clone of `ispbillingai/numeratore`, branch `main`).
-- Domain: `numeratore.upgradesrls.com`, vhost `/etc/apache2/sites-available/numeratore.conf` (port 80).
-  **DNS not pointed yet** (2026-10-06). Until the A record points to 217.160.131.242, test on the
-  server with `curl -H "Host: numeratore.upgradesrls.com" http://127.0.0.1/`. Once DNS points, run
-  `certbot --apache -d numeratore.upgradesrls.com --redirect` to add HTTPS.
+- Domain: https://numeratore.upgradesrls.com (DNS A → 217.160.131.242 since 2026-10-06). Vhosts
+  `/etc/apache2/sites-available/numeratore.conf` (:80, redirects to https) and `numeratore-le-ssl.conf`
+  (:443, Let's Encrypt via certbot, auto-renew). Server timezone in `config/database.php`: Europe/Rome.
 - DB: `numeratore`, user `numeratore` (password only in the server's `config/database.php`). Seeded from the
   pub DB on 2026-10-06 (menu, rooms, tables, staff users, workspaces). Orders, customers,
   WhatsApp/TextMeBot, Glovo, payment-gateway, Cashmatic and printer settings were removed.
@@ -33,8 +32,7 @@ fiscal printing, card payments (Epson RT protocol 17 / Dojo), Glovo orders, "Cli
    `cd /var/www/html/numeratore && git pull origin main && php migrate.php`
 3. Wait ~3 s (opcache revalidate_freq=2), then test live:
    - `php -l` each changed PHP file on the server;
-   - `curl -s -o /dev/null -w '%{http_code}' -H "Host: numeratore.upgradesrls.com" http://127.0.0.1/login.php`
-     (or `https://numeratore.upgradesrls.com/...` once DNS and the certificate are in place);
+   - `curl -s -o /dev/null -w '%{http_code}' https://numeratore.upgradesrls.com/login.php`;
    - render changed pages with a CLI script that sets `$_SESSION['user_id']`;
    - `tail /var/log/apache2/numeratore.upgradesrls.com-error.log`: no new errors.
 4. Report the commit hash and the test result.
