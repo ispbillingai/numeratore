@@ -190,7 +190,7 @@ function renderServing(services) {
     box.innerHTML = services.map(s => `
         <div class="svc" data-id="${s.id}" style="background:${esc(s.color)}">
             <div class="lbl">${esc(s.name)} · ora serviamo</div>
-            <div class="num" style="font-size:${size}vh">${s.current ? esc(s.current) : '<span class="none">In attesa del primo numero</span>'}</div>
+            <div class="num" style="font-size:min(${size}vh, ${(36 / (0.68 * Math.max(4, (s.current || '').length))).toFixed(1)}vw)">${s.current ? esc(s.current) : '<span class="none">In attesa del primo numero</span>'}</div>
             <div class="meta">${s.waiting > 0 ? 'In attesa: ' + s.waiting : 'Nessuno in attesa'}</div>
         </div>`).join('') || '<div class="placeholder">Nessun servizio attivo</div>';
 }
