@@ -9,6 +9,9 @@
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/settings.php';
 
+// The day (and so the ticket numbering) changes at midnight Italian time, whatever config/database.php says.
+date_default_timezone_set('Europe/Rome');
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

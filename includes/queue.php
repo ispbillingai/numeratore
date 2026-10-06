@@ -189,6 +189,19 @@ function queueReset(?int $serviceId): void
 }
 
 /**
+ * Midnight reset (bin/midnight-reset.php, cron at 00:00): tickets of the
+ * previous days still waiting or being called are closed, so every counter
+ * starts the new day empty and from 1. Kept as 'served' for the history.
+ * Returns how many tickets were closed.
+ */
+function queueCloseDay(): int
+{
+    $st = getDBConnection()->prepare("UPDATE queue_tickets SET status = 'served' WHERE ticket_date < ? AND status IN ('waiting', 'called')");
+    $st->execute([date('Y-m-d')]);
+    return $st->rowCount();
+}
+
+/**
  * Live state for the monitor and the operator page: per active service the
  * number being served, how many wait and the last number taken; plus the last
  * numbers called. `stamp` changes on every call/recall so screens can chime.

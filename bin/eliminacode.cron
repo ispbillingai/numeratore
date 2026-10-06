@@ -1,0 +1,2 @@
+# Eliminacode: every counter restarts from 1 at midnight (Europe/Rome). Installed as /etc/cron.d/eliminacode
+0 0 * * * www-data /usr/bin/php /var/www/html/eliminacode/bin/midnight-reset.php >/dev/null 2>&1

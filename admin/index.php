@@ -185,7 +185,7 @@ include __DIR__ . '/../includes/header.php';
 <div class="card mt-lg" id="services">
     <div class="card-header"><h2><i class="fas fa-list-ol"></i> Servizi (pulsanti del totem)</h2></div>
     <div class="card-body qa-wide">
-        <p class="qa-note">Ogni servizio ha la sua numerazione (A001, B001…), che riparte da 1 ogni giorno.</p>
+        <p class="qa-note">Ogni servizio ha la sua numerazione (A001, B001…), che riparte da 1 ogni giorno: a mezzanotte tutti i contatori si azzerano da soli.</p>
         <table class="qa-table">
             <tr><th>Lettera</th><th>Nome</th><th>Colore</th><th>Ordine</th><th>Attivo</th><th>Oggi</th><th></th></tr>
             <?php foreach ($services as $s): $st = $state[$s['id']] ?? null; $f = 'svc' . (int) $s['id']; ?>

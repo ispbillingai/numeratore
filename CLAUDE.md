@@ -24,7 +24,10 @@ at the user's request. Integrating it into other projects is a later decision of
   (renamed 2026-10-06) only 301-redirects to eliminacode (`numeratore.conf` / `numeratore-le-ssl.conf`).
 - DB `eliminacode`, user `eliminacode` (password only in the server's `config/database.php`).
   The old DB `numeratore` (with the POS tables copied from pub) is kept untouched as a backup.
-- Logs: `/var/log/apache2/eliminacode.upgradesrls.com-error.log`. Timezone Europe/Rome.
+- Logs: `/var/log/apache2/eliminacode.upgradesrls.com-error.log`. Timezone Europe/Rome (also forced in
+  `includes/functions.php`).
+- Cron `/etc/cron.d/eliminacode` (copy of `bin/eliminacode.cron`): `bin/midnight-reset.php` at 00:00 closes
+  yesterday's open tickets, so every counter restarts from 1. If you change the cron file, copy it again.
 - Ticket printer: the server can't reach the shop LAN by itself; needs a route (OpenVPN, never touch
   WireGuard). Until then the totem prints from the browser.
 

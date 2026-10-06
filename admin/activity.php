@@ -11,7 +11,7 @@ $rows = getDBConnection()->query("
 $labels = [
     'login' => 'Accesso', 'logout' => 'Uscita',
     'user_created' => 'Utente creato', 'user_updated' => 'Utente modificato', 'user_toggled' => 'Utente attivato/disattivato',
-    'queue_service_saved' => 'Servizio salvato', 'queue_settings_updated' => 'Impostazioni eliminacode', 'queue_reset' => 'Coda azzerata',
+    'queue_service_saved' => 'Servizio salvato', 'queue_settings_updated' => 'Impostazioni eliminacode', 'queue_reset' => 'Coda azzerata', 'queue_midnight_reset' => 'Azzeramento di mezzanotte',
 ];
 
 $pageTitle = 'Registro attività';
