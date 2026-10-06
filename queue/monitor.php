@@ -29,9 +29,9 @@ $h     = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 <title>Monitor eliminacode</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root { --bg:#0b1424; --panel:#14213a; --panel2:#1b2b4a; --text:#fff; --muted:rgba(255,255,255,.65); --accent:#f5b301; }
+:root { --bg:#082f49; --panel:#0c4a6e; --panel2:#075985; --text:#fff; --muted:rgba(224,242,254,.75); --accent:#facc15; }
 * { box-sizing:border-box; }
-html,body { margin:0; height:100%; background:var(--bg); color:var(--text); font-family:'DM Sans',system-ui,sans-serif; overflow:hidden; cursor:none; }
+html,body { margin:0; height:100%; background:linear-gradient(160deg,#0c4a6e 0%,#082f49 100%) var(--bg); color:var(--text); font-family:'DM Sans',system-ui,sans-serif; overflow:hidden; cursor:none; }
 .screen { height:100vh; display:grid; grid-template-rows:11vh 1fr 8vh; gap:1.4vh; padding:1.4vh 1.4vw; }
 
 /* Top bar */
@@ -71,7 +71,7 @@ html,body { margin:0; height:100%; background:var(--bg); color:var(--text); font
 .slide .ttl { font-size:5.4vh; font-weight:800; line-height:1.05; }
 .slide .stl { font-size:2.6vh; color:rgba(255,255,255,.88); margin-top:.6vh; }
 .slide .price { position:absolute; top:2.4vh; right:1.6vw; background:var(--accent); color:#111; font-weight:800; font-size:4.4vh; padding:.8vh 1.4vw; border-radius:14px; }
-.slide.noimg .img { background:linear-gradient(135deg,#1e3a8a,#7c3aed); }
+.slide.noimg .img { background:linear-gradient(135deg,#0369a1,#38bdf8); }
 .slides .dots { position:absolute; bottom:1.2vh; right:1.4vw; display:flex; gap:.5vw; }
 .slides .dots i { width:1vh; height:1vh; border-radius:50%; background:rgba(255,255,255,.35); }
 .slides .dots i.on { background:#fff; }
@@ -86,13 +86,13 @@ html,body { margin:0; height:100%; background:var(--bg); color:var(--text); font
 
 /* News ticker */
 .news { display:flex; align-items:center; background:var(--panel); border-radius:18px; overflow:hidden; }
-.news .tag { background:#dc2626; height:100%; display:flex; align-items:center; padding:0 1.6vw; font-weight:800; font-size:2.4vh; letter-spacing:.06em; flex:none; }
+.news .tag { background:#0ea5e9; height:100%; display:flex; align-items:center; padding:0 1.6vw; font-weight:800; font-size:2.4vh; letter-spacing:.06em; flex:none; }
 .news .track { flex:1; overflow:hidden; white-space:nowrap; position:relative; height:100%; }
 .news .run { position:absolute; top:50%; transform:translateY(-50%); white-space:nowrap; font-size:3vh; font-weight:600; will-change:left; }
 .news .run span::after { content:'•'; color:var(--accent); margin:0 2vw; }
 
 /* Full-screen call */
-.call { position:fixed; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column; z-index:20; background:rgba(5,10,20,.92); }
+.call { position:fixed; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column; z-index:20; background:rgba(8,47,73,.93); }
 .call.show { display:flex; }
 .call .box { border-radius:36px; padding:5vh 6vw; text-align:center; min-width:50vw; box-shadow:0 20px 80px rgba(0,0,0,.6); animation:pop .4s ease-out; }
 .call .who { font-size:4.4vh; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }

@@ -30,9 +30,9 @@ $h        = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 <title>Totem eliminacode</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root { --bg:#0f1b2d; --card:#16233a; --text:#fff; --muted:rgba(255,255,255,.7); }
+:root { --bg:#e0f2fe; --card:#fff; --text:#0c4a6e; --muted:#3b7ea6; }
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-html,body { margin:0; height:100%; background:var(--bg); color:var(--text); font-family:'DM Sans',system-ui,sans-serif; user-select:none; overflow:hidden; }
+html,body { margin:0; height:100%; background:linear-gradient(160deg,#f0f9ff 0%,#bae6fd 100%) fixed var(--bg); color:var(--text); font-family:'DM Sans',system-ui,sans-serif; user-select:none; overflow:hidden; }
 .wrap { height:100%; display:flex; flex-direction:column; align-items:center; padding:4vh 4vw; gap:3vh; }
 .head { text-align:center; }
 .head img { max-height:14vh; max-width:60vw; }
@@ -43,7 +43,7 @@ h1 { font-size:5.5vh; margin:1vh 0 0; font-weight:800; }
             grid-template-columns:repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
 .svc { border:0; border-radius:28px; color:#fff; cursor:pointer; padding:5vh 3vw; min-height:20vh;
        display:flex; align-items:center; gap:3vw; text-align:left; font-family:inherit;
-       box-shadow:0 10px 30px rgba(0,0,0,.35); transition:transform .1s; }
+       box-shadow:0 10px 30px rgba(3,105,161,.3); transition:transform .1s; }
 .svc:active { transform:scale(.97); }
 .svc .letter { font-size:9vh; font-weight:800; width:13vh; height:13vh; border-radius:50%; background:rgba(255,255,255,.2);
                display:flex; align-items:center; justify-content:center; flex:none; }
@@ -51,7 +51,7 @@ h1 { font-size:5.5vh; margin:1vh 0 0; font-weight:800; }
 .svc .wait { font-size:2.4vh; opacity:.9; margin-top:.6vh; }
 .svc[disabled] { opacity:.6; }
 .empty { color:var(--muted); font-size:3vh; text-align:center; }
-.overlay { position:fixed; inset:0; background:rgba(10,18,30,.94); display:none; align-items:center; justify-content:center; z-index:10; }
+.overlay { position:fixed; inset:0; background:rgba(8,47,73,.9); display:none; align-items:center; justify-content:center; z-index:10; }
 .overlay.show { display:flex; }
 .ticket { background:#fff; color:#111; border-radius:28px; padding:5vh 6vw; text-align:center; min-width:min(90vw,560px); }
 .ticket .svcname { font-size:3.4vh; font-weight:700; }

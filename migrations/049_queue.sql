@@ -40,5 +40,5 @@ CREATE TABLE IF NOT EXISTS queue_slides (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 INSERT INTO queue_services (letter, name, color, sort_order)
-SELECT 'A', 'Banco', '#e74c3c', 1 FROM DUAL
+SELECT 'A', 'Banco', '#0284c7', 1 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM queue_services);

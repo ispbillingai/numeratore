@@ -25,11 +25,11 @@ $navLink     = static fn(string $href, string $icon, string $label) =>
     <style>
         .app-body { display:flex; align-items:stretch; }
         .app-body > .main-content { flex:1 1 auto; min-width:0; }
-        .admin-sidebar { flex:0 0 230px; width:230px; background:#16233a; min-height:calc(100vh - 70px); padding:16px 12px; }
+        .admin-sidebar { flex:0 0 230px; width:230px; background:#0c4a6e; min-height:calc(100vh - 70px); padding:16px 12px; }
         .admin-sidebar a { display:flex; align-items:center; gap:11px; padding:11px 13px; border-radius:8px; color:rgba(255,255,255,.82); text-decoration:none; font-size:.95rem; margin-bottom:3px; }
         .admin-sidebar a i { width:18px; text-align:center; }
         .admin-sidebar a:hover { background:rgba(255,255,255,.08); color:#fff; }
-        .admin-sidebar a.active { background:var(--primary,#e74c3c); color:#fff; }
+        .admin-sidebar a.active { background:var(--primary,#0284c7); color:#fff; }
         @media (max-width:1024px){ .app-body{flex-direction:column;} .admin-sidebar{flex:none;width:auto;min-height:0;display:flex;flex-wrap:wrap;} }
     </style>
 </head>

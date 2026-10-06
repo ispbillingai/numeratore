@@ -7,11 +7,11 @@
    CSS Variables & Theme
    ============================================ */
 :root {
-    /* Colors - Warm restaurant palette */
-    --primary: #d35400;
-    --primary-dark: #a84300;
-    --primary-light: #e67e22;
-    --secondary: #2c3e50;
+    /* Colors - azure palette */
+    --primary: #0284c7;
+    --primary-dark: #0369a1;
+    --primary-light: #38bdf8;
+    --secondary: #075985;
     --accent: #16a085;
     --success: #27ae60;
     --warning: #f39c12;
@@ -19,13 +19,13 @@
     --info: #3498db;
     
     /* Neutrals */
-    --bg-dark: #1a1a2e;
-    --bg-card: #16213e;
+    --bg-dark: #082f49;
+    --bg-card: #0c4a6e;
     --bg-light: #f8f9fa;
-    --text-primary: #2c3e50;
+    --text-primary: #0c3b56;
     --text-secondary: #7f8c8d;
     --text-light: #ecf0f1;
-    --border-color: #dfe6e9;
+    --border-color: #d6ebf7;
     
     /* Status colors */
     --status-free: #27ae60;
@@ -49,7 +49,7 @@
     --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
     --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
     --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
-    --shadow-glow: 0 0 20px rgba(211, 84, 0, 0.3);
+    --shadow-glow: 0 0 20px rgba(2, 132, 199, 0.3);
     
     /* Borders */
     --radius-sm: 6px;
@@ -79,7 +79,7 @@ html {
 
 body {
     font-family: var(--font-main);
-    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+    background: linear-gradient(135deg, #f0f9ff 0%, #dbeefb 100%);
     min-height: 100vh;
     color: var(--text-primary);
     line-height: 1.6;
@@ -89,7 +89,7 @@ body {
    Navigation
    ============================================ */
 .main-nav {
-    background: var(--secondary);
+    background: linear-gradient(90deg, #075985 0%, #0284c7 60%, #0ea5e9 100%);
     padding: var(--space-md) var(--space-xl);
     display: flex;
     align-items: center;
@@ -1013,7 +1013,7 @@ textarea.form-control {
 
 .payment-method.selected {
     border-color: var(--primary);
-    background: rgba(211, 84, 0, 0.05);
+    background: rgba(2, 132, 199, 0.05);
 }
 
 .payment-method i {
@@ -1202,7 +1202,7 @@ textarea.form-control {
 }
 
 .badge-primary {
-    background: rgba(211, 84, 0, 0.1);
+    background: rgba(2, 132, 199, 0.1);
     color: var(--primary);
 }
 
@@ -1297,7 +1297,7 @@ textarea.form-control {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--secondary) 0%, #1a1a2e 100%);
+    background: linear-gradient(135deg, #38bdf8 0%, #0284c7 50%, #075985 100%);
 }
 
 .login-container {

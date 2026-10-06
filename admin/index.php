@@ -20,7 +20,7 @@ const QUEUE_NEWS_PRESETS = [
     'https://www.ansa.it/sito/notizie/economia/economia_rss.xml' => 'ANSA — Economia',
 ];
 
-$color = static fn($c) => preg_match('/^#[0-9a-fA-F]{6}$/', (string) $c) ? strtolower($c) : '#e74c3c';
+$color = static fn($c) => preg_match('/^#[0-9a-fA-F]{6}$/', (string) $c) ? strtolower($c) : '#0284c7';
 $back  = static function (string $msg, string $anchor = '') {
     $_SESSION['queue_flash'] = $msg;
     header('Location: /admin/index.php' . ($anchor ? '#' . $anchor : ''));
@@ -202,7 +202,7 @@ include __DIR__ . '/../includes/header.php';
             <tr>
                 <td><input form="svcNew" type="text" name="letter" maxlength="3" class="form-control" placeholder="B"></td>
                 <td><input form="svcNew" type="text" name="name" maxlength="80" class="form-control" placeholder="Nuovo servizio, es. Panetteria" required></td>
-                <td><input form="svcNew" type="color" name="color" value="#2563eb"></td>
+                <td><input form="svcNew" type="color" name="color" value="#0ea5e9"></td>
                 <td><input form="svcNew" type="number" name="sort_order" class="form-control" value="<?= count($services) + 1 ?>"></td>
                 <td><input form="svcNew" type="checkbox" name="active" checked></td>
                 <td></td>
