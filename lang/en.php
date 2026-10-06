@@ -4,7 +4,7 @@
  */
 return [
     // ---- App / chrome ----
-    'app_name'        => 'Focacciami',
+    'app_name'        => 'Eliminacode Upgrade',
     'footer_tagline'  => 'Restaurant Management System',
     'language'        => 'Language',
 
@@ -45,7 +45,7 @@ return [
 
     // ---- Login ----
     'login_title'     => 'Sign In',
-    'login_subtitle'  => 'Restaurant POS System',
+    'login_subtitle'  => 'Queue management system',
     'login_username'  => 'Username',
     'login_password'  => 'Password',
     'login_button'    => 'Sign In',

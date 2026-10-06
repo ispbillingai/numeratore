@@ -104,7 +104,7 @@ function redirectToRole($role) {
         </div>
         <div class="login-logo">
             <?php if (is_file(__DIR__ . '/assets/img/logo.png')): ?><img class="login-logo-img" src="/assets/img/logo.png?v=<?= filemtime(__DIR__ . '/assets/img/logo.png') ?>" alt=""><?php else: ?>
-            <i class="fas fa-utensils"></i>
+            <i class="fas fa-ticket"></i>
             <h1><?= te('app_name') ?></h1>
             <?php endif; ?>
             <p class="text-muted"><?= te('login_subtitle') ?></p>

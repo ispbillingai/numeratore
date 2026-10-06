@@ -6,7 +6,7 @@
 
 $currentUser = getCurrentUser();
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
-$pageTitle = $pageTitle ?? 'Focacciami';
+$pageTitle = $pageTitle ?? 'Eliminacode Upgrade';
 $unreadCount = $currentUser ? getUnreadNotificationsCount($currentUser['id']) : 0;
 $inAdmin = $currentUser && ($currentUser['role'] ?? '') === 'admin'
     && strpos($_SERVER['PHP_SELF'] ?? '', '/admin/') !== false;
@@ -61,7 +61,7 @@ $inAdmin = $currentUser && ($currentUser['role'] ?? '') === 'admin'
             <?php if ($logo = brandLogoUrl()): ?>
                 <span class="nav-logo"><img src="<?= htmlspecialchars($logo) ?>" alt="<?= te('app_name') ?>"></span>
             <?php else: ?>
-                <i class="fas fa-utensils"></i>
+                <i class="fas fa-ticket"></i>
                 <span><?= te('app_name') ?></span>
             <?php endif; ?>
         </div>
