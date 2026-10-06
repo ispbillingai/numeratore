@@ -1,4 +1,4 @@
-# Eliminacode Upgrade
+# Eliminacode
 
 Take-a-number queue system (PHP 8 + MariaDB):
 

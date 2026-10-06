@@ -1,7 +1,7 @@
 <?php
 /**
  * Database Migration Runner
- * Eliminacode Upgrade
+ * Eliminacode
  *
  * Applies versioned SQL migration files from the /migrations folder so you can
  * safely add new tables/columns/rows without manually running SQL on the server.
@@ -55,7 +55,7 @@ function out($msg, $type = 'info') {
 // ----------------------------------------------------------------------------
 if (!$isCli) {
     header('Content-Type: text/html; charset=utf-8');
-    echo '<h2 style="font-family:sans-serif">Eliminacode Upgrade — Database Migrations</h2>';
+    echo '<h2 style="font-family:sans-serif">Eliminacode — Database Migrations</h2>';
     $key = $_GET['key'] ?? '';
     if (!hash_equals($MIGRATE_KEY, (string) $key)) {
         http_response_code(403);

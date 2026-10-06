@@ -1,4 +1,4 @@
-# Eliminacode Upgrade - Apache Configuration
+# Eliminacode - Apache Configuration
 
 # Enable URL rewriting
 RewriteEngine On

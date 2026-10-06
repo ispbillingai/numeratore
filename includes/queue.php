@@ -325,7 +325,7 @@ function queueHttpGet(string $url): ?string
         CURLOPT_MAXREDIRS      => 3,
         CURLOPT_CONNECTTIMEOUT => 4,
         CURLOPT_TIMEOUT        => 8,
-        CURLOPT_USERAGENT      => 'Mozilla/5.0 (Numeratore display)',
+        CURLOPT_USERAGENT      => 'Mozilla/5.0 (Eliminacode display)',
     ]);
     $body = curl_exec($ch);
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -339,7 +339,7 @@ function queueHttpGet(string $url): ?string
  */
 function queueCached(string $name, int $ttl, callable $fetch)
 {
-    $file = sys_get_temp_dir() . '/numeratore_queue_' . md5($name) . '.json';
+    $file = sys_get_temp_dir() . '/eliminacode_queue_' . md5($name) . '.json';
     $old  = is_file($file) ? json_decode((string) @file_get_contents($file), true) : null;
     if (is_array($old) && ($old['t'] ?? 0) > time() - $ttl) {
         return $old['v'];

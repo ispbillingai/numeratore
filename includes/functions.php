@@ -1,6 +1,6 @@
 <?php
 /**
- * Common functions — Eliminacode Upgrade.
+ * Common functions — Eliminacode.
  * Session, login and roles, JSON replies, activity log, app name and logo.
  *
  * Roles: 'admin' (everything) and 'operator' (calls numbers on queue/operator.php).
@@ -13,7 +13,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-const APP_DEFAULT_NAME = 'Eliminacode Upgrade';
+const APP_DEFAULT_NAME = 'Eliminacode';
 const USER_ROLES = ['admin' => 'Amministratore', 'operator' => 'Operatore'];
 
 /** HTML-escape. */

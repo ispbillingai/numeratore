@@ -1,6 +1,6 @@
 <?php
 /**
- * Page header — Eliminacode Upgrade.
+ * Page header — Eliminacode.
  * Top bar (Operatore, Amministrazione, user, logout) and, in /admin/, the sidebar.
  * Set $pageTitle before including.
  */

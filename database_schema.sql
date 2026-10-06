@@ -1,4 +1,4 @@
--- Eliminacode Upgrade — base schema for a fresh install.
+-- Eliminacode — base schema for a fresh install.
 -- Import this into an empty database, then run `php migrate.php`
 -- (it creates the queue tables: migrations/049_queue.sql).
 -- First login: admin / admin123 — change the password in Amministrazione › Utenti.

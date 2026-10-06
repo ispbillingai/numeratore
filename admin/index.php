@@ -127,7 +127,7 @@ $state    = [];
 foreach (queueState()['services'] as $s) $state[$s['id']] = $s;
 
 $https = ($_SERVER['HTTPS'] ?? '') === 'on' || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
-$base  = ($https ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'numeratore.upgradesrls.com');
+$base  = ($https ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'eliminacode.upgradesrls.com');
 $links = [
     ['Totem (clienti)', 'fa-hand-pointer', $base . '/queue/totem.php?k=' . $cfg['key'], 'Chrome a schermo intero: chrome --kiosk --kiosk-printing "<link>"'],
     ['Monitor', 'fa-tv', $base . '/queue/monitor.php?k=' . $cfg['key'], 'Chrome a schermo intero: chrome --kiosk --autoplay-policy=no-user-gesture-required "<link>"'],

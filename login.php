@@ -1,5 +1,5 @@
 <?php
-/** Login — Eliminacode Upgrade. */
+/** Login — Eliminacode. */
 require_once __DIR__ . '/includes/functions.php';
 
 if ($user = getCurrentUser()) {
