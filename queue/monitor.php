@@ -54,6 +54,7 @@ html,body { margin:0; height:100%; background:linear-gradient(160deg,#0c4a6e 0%,
 .svc .lbl { font-size:2.4vh; font-weight:700; text-transform:uppercase; letter-spacing:.06em; opacity:.92; }
 .svc .num { font-weight:800; line-height:1; font-variant-numeric:tabular-nums; }
 .svc .meta { font-size:2vh; opacity:.9; }
+.svc .num .none { font-size:3.4vh; font-weight:600; opacity:.75; }
 .svc.flash { animation:flash 1s ease-in-out 4; }
 @keyframes flash { 50% { filter:brightness(1.6); transform:scale(1.02); } }
 .recent { background:var(--panel); border-radius:18px; padding:1.4vh 1.4vw; }
@@ -184,7 +185,7 @@ function renderServing(services) {
     box.innerHTML = services.map(s => `
         <div class="svc" data-id="${s.id}" style="background:${esc(s.color)}">
             <div class="lbl">${esc(s.name)} · ora serviamo</div>
-            <div class="num" style="font-size:${size}vh">${esc(s.current || '—')}</div>
+            <div class="num" style="font-size:${size}vh">${s.current ? esc(s.current) : '<span class="none">In attesa del primo numero</span>'}</div>
             <div class="meta">${s.waiting > 0 ? 'In attesa: ' + s.waiting : 'Nessuno in attesa'}</div>
         </div>`).join('') || '<div class="placeholder">Nessun servizio attivo</div>';
 }
