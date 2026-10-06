@@ -19,9 +19,9 @@ at the user's request. Integrating it into other projects is a later decision of
   Focacciami (`/var/www/html/focacciami`… see memory) and chiamata. SSH as root: credentials and the plink
   one-liner are in Claude's local memory `pub-server.md`, never in git.
 - App folder `/var/www/html/eliminacode`, branch `main`.
-- https://eliminacode.upgradesrls.com — vhost `eliminacode.conf` (+ `eliminacode-le-ssl.conf` once certbot
-  has run). Renamed from numeratore on 2026-10-06: the old `numeratore.conf`/`numeratore-le-ssl.conf`
-  serve the same folder until the eliminacode DNS points here, then they redirect to eliminacode.
+- https://eliminacode.upgradesrls.com — vhosts `eliminacode.conf` (:80 → https) and
+  `eliminacode-le-ssl.conf` (:443, Let's Encrypt, auto-renew). The old name numeratore.upgradesrls.com
+  (renamed 2026-10-06) only 301-redirects to eliminacode (`numeratore.conf` / `numeratore-le-ssl.conf`).
 - DB `eliminacode`, user `eliminacode` (password only in the server's `config/database.php`).
   The old DB `numeratore` (with the POS tables copied from pub) is kept untouched as a backup.
 - Logs: `/var/log/apache2/eliminacode.upgradesrls.com-error.log`. Timezone Europe/Rome.
