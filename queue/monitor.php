@@ -5,7 +5,7 @@
  * Opened without a login: /queue/monitor.php?k=<settings.queue.key>.
  * Left: the number being served per service (flashes with a chime and a voice
  * on every call) and the last numbers called. Right: product tiles in rotation
- * (Admin › Eliminacode) and the weather. Bottom: news headlines.
+ * (Amministrazione › Eliminacode) and the weather. Bottom: news headlines.
  * Sound needs one click on the screen, or Chrome started with
  * --autoplay-policy=no-user-gesture-required.
  */
@@ -15,9 +15,9 @@ require_once __DIR__ . '/../includes/queue.php';
 $key = (string) ($_GET['k'] ?? '');
 if (!queueKeyOk($key)) {
     http_response_code(403);
-    exit('Link del monitor non valido. Copialo da Admin › Eliminacode.');
+    exit('Link del monitor non valido. Copialo da Amministrazione › Eliminacode.');
 }
-$brand = (string) getDBConnection()->query("SELECT name FROM workspaces LIMIT 1")->fetchColumn();
+$brand = appName();
 $logo  = brandLogoUrl();
 $h     = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 ?>
@@ -118,7 +118,7 @@ html,body { margin:0; height:100%; background:var(--bg); color:var(--text); font
             <div class="recent"><h3>Ultimi chiamati</h3><div class="list" id="recent"></div></div>
         </div>
         <div class="right">
-            <div class="slides" id="slides"><div class="placeholder">Aggiungi i prodotti da mostrare in Admin › Eliminacode</div></div>
+            <div class="slides" id="slides"><div class="placeholder">Aggiungi i prodotti da mostrare in Amministrazione › Eliminacode</div></div>
             <div class="forecast" id="forecast"></div>
         </div>
     </div>
@@ -226,7 +226,7 @@ async function poll() {
 let slides = [], slideIdx = 0, slideSecs = 8, slideTimer = null, slidesSig = '';
 function renderSlides() {
     const box = q('slides');
-    if (!slides.length) { box.innerHTML = '<div class="placeholder">Aggiungi i prodotti da mostrare in Admin › Eliminacode</div>'; return; }
+    if (!slides.length) { box.innerHTML = '<div class="placeholder">Aggiungi i prodotti da mostrare in Amministrazione › Eliminacode</div>'; return; }
     box.innerHTML = slides.map((s, i) => `
         <div class="slide${s.image ? '' : ' noimg'}${i === 0 ? ' on' : ''}">
             <div class="img" ${s.image ? `style="background-image:url('${esc(s.image)}')"` : ''}></div>

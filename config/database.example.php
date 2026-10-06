@@ -1,7 +1,7 @@
 <?php
 /**
  * Database Configuration (EXAMPLE)
- * Restaurant POS System
+ * Eliminacode Upgrade
  *
  * Copy this file to database.php and fill in your real credentials.
  * database.php is git-ignored so secrets stay out of the repository.
@@ -37,10 +37,8 @@ function getDBConnection() {
 // Application settings. Guarded with defined() so re-including this file (e.g.
 // from a CLI poller that loads config through more than one path) doesn't emit
 // "Constant already defined" warnings.
-defined('COVER_CHARGE_DEFAULT') || define('COVER_CHARGE_DEFAULT', 2.50);
-defined('CURRENCY_SYMBOL')      || define('CURRENCY_SYMBOL', '$');
-defined('APP_NAME')             || define('APP_NAME', 'RestoPOS');
+defined('APP_NAME')             || define('APP_NAME', 'Eliminacode Upgrade');
 defined('APP_VERSION')          || define('APP_VERSION', '1.0.0');
 
 // Timezone
-date_default_timezone_set('Africa/Nairobi');
+date_default_timezone_set('Europe/Rome');

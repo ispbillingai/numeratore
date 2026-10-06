@@ -17,14 +17,19 @@ require_once __DIR__ . '/ThermalPrinter.php';
 
 const QUEUE_NEWS_DEFAULT = 'https://www.ansa.it/sito/notizie/topnews/topnews_rss.xml';
 /** Staff roles that may call numbers from the operator page. */
-const QUEUE_OPERATOR_ROLES = ['admin', 'cashier', 'waiter'];
+const QUEUE_OPERATOR_ROLES = ['admin', 'operator'];
 
 /** settings.queue with defaults; creates the screen key on first use. */
 function queueSettings(): array
 {
+    static $memo = null;
+    if ($memo !== null) {
+        return $memo;
+    }
     $cfg = (array) getSetting('queue', []);
     $cfg += [
         'key'           => '',
+        'brand'         => '',
         'totem_title'   => 'Prendi il tuo numero',
         'ticket_header' => '',
         'ticket_footer' => "Grazie per l'attesa",
@@ -41,7 +46,7 @@ function queueSettings(): array
         $cfg['key'] = bin2hex(random_bytes(12));
         setSetting('queue', $cfg);
     }
-    return $cfg;
+    return $memo = $cfg;
 }
 
 /** Does the URL key open the totem / monitor? */
@@ -261,9 +266,8 @@ function queuePrintTicket(array $ticket): array
         return ['ok' => false, 'error' => 'printer_not_configured'];
     }
     $cfg = queueSettings();
-    $ws  = getDBConnection()->query("SELECT name FROM workspaces LIMIT 1")->fetchColumn();
     $res = $p->printQueueTicket([
-        'brand'   => trim((string) $cfg['ticket_header']) ?: (string) $ws,
+        'brand'   => trim((string) $cfg['ticket_header']) ?: appName(),
         'service' => $ticket['service'],
         'number'  => $ticket['label'],
         'ahead'   => $ticket['ahead'] > 0 ? 'Persone prima di te: ' . $ticket['ahead'] : '',

@@ -1,20 +1,14 @@
 # Database configuration (contains credentials)
 config/database.php
 
-# Device integration config (Cashmatic / Ingenico / Epson / QR credentials & IPs)
-config/devices.php
+# Uploaded product photos for the monitor (user content; created on the server at runtime)
+assets/uploads/*
 
-# Uploaded menu photos (user content; created on the server at runtime)
-assets/uploads/menu/*
-!assets/uploads/menu/.gitkeep
-assets/uploads/campaigns/*
-assets/uploads/queue/*
+# Logo (assets/img/logo.png) is per installation
+assets/img/
 
 # OS / editor cruft
 .DS_Store
 Thumbs.db
 *.log
 *.stackdump
-
-# Unused early prototype (browser-direct device client; superseded by server-side)
-assets/js/devices.js

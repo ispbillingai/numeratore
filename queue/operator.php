@@ -32,7 +32,7 @@ include __DIR__ . '/../includes/header.php';
 <div class="page-header">
     <h1><i class="fas fa-ticket"></i> Eliminacode</h1>
     <?php if (hasRole(['admin'])): ?>
-        <a href="/admin/queue.php" class="btn btn-outline"><i class="fas fa-cog"></i> Impostazioni</a>
+        <a href="/admin/index.php" class="btn btn-outline"><i class="fas fa-cog"></i> Impostazioni</a>
     <?php endif; ?>
 </div>
 
@@ -63,7 +63,7 @@ function build(services) {
                 </div>
                 <div class="qo-msg"></div>
             </div>
-        </div>`).join('') || '<p>Nessun servizio attivo. Aggiungili in Admin › Eliminacode.</p>';
+        </div>`).join('') || '<p>Nessun servizio attivo. Aggiungili in Amministrazione › Eliminacode.</p>';
 }
 
 function render(j) {

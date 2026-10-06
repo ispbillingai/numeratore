@@ -4,7 +4,7 @@
  *
  * Opened without a login: /queue/totem.php?k=<settings.queue.key>.
  * One big button per active service. The ticket is printed by the server on the
- * network ESC/POS printer (Admin › Eliminacode); when none is configured or it
+ * network ESC/POS printer (Amministrazione › Eliminacode); when none is configured or it
  * fails, the page prints it itself (run Chrome with --kiosk --kiosk-printing so
  * there is no print dialog).
  */
@@ -14,11 +14,11 @@ require_once __DIR__ . '/../includes/queue.php';
 $key = (string) ($_GET['k'] ?? '');
 if (!queueKeyOk($key)) {
     http_response_code(403);
-    exit('Link del totem non valido. Copialo da Admin › Eliminacode.');
+    exit('Link del totem non valido. Copialo da Amministrazione › Eliminacode.');
 }
 $cfg      = queueSettings();
 $services = queueServices();
-$brand    = (string) getDBConnection()->query("SELECT name FROM workspaces LIMIT 1")->fetchColumn();
+$brand    = appName();
 $logo     = brandLogoUrl();
 $h        = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 ?>

@@ -1,167 +1,323 @@
 <?php
 /**
- * Admin Dashboard
- * Restaurant POS System
+ * Admin: Eliminacode (includes/queue.php) — the app's main admin page.
+ * Links for the totem / monitor / operator page, the services customers pick
+ * on the totem, the product tiles shown on the monitor, weather city, news
+ * feed and the totem's network ticket printer.
  */
-
 require_once __DIR__ . '/../includes/functions.php';
-require_once __DIR__ . '/../includes/table_visual.php';
+require_once __DIR__ . '/../includes/queue.php';
 requireRole(['admin']);
 
 $pdo = getDBConnection();
+$cfg = queueSettings();
 
-// Get statistics
-$stats = [];
+const QUEUE_NEWS_PRESETS = [
+    'https://www.ansa.it/sito/notizie/topnews/topnews_rss.xml'   => 'ANSA — Ultima ora',
+    'https://www.ansa.it/campania/notizie/campania_rss.xml'      => 'ANSA — Campania',
+    'https://www.ansa.it/sito/notizie/cronaca/cronaca_rss.xml'   => 'ANSA — Cronaca',
+    'https://www.ansa.it/sito/notizie/sport/sport_rss.xml'       => 'ANSA — Sport',
+    'https://www.ansa.it/sito/notizie/economia/economia_rss.xml' => 'ANSA — Economia',
+];
 
-// Today's orders
-$stmt = $pdo->query("SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as total FROM orders WHERE DATE(opened_at) = CURDATE()");
-$stats['today'] = $stmt->fetch();
+$color = static fn($c) => preg_match('/^#[0-9a-fA-F]{6}$/', (string) $c) ? strtolower($c) : '#e74c3c';
+$back  = static function (string $msg, string $anchor = '') {
+    $_SESSION['queue_flash'] = $msg;
+    header('Location: /admin/index.php' . ($anchor ? '#' . $anchor : ''));
+    exit;
+};
 
-// Active orders
-$stmt = $pdo->query("SELECT COUNT(*) as count FROM orders WHERE status NOT IN ('paid', 'cancelled')");
-$stats['active_orders'] = $stmt->fetch()['count'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
 
-// Tables
-$stmt = $pdo->query("SELECT COUNT(*) as total, SUM(CASE WHEN status != 'free' THEN 1 ELSE 0 END) as occupied FROM tables_restaurant");
-$stats['tables'] = $stmt->fetch();
+    if ($action === 'add_service' || $action === 'save_service') {
+        $letter = mb_strtoupper(mb_substr(preg_replace('/[^A-Za-z0-9]/', '', (string) ($_POST['letter'] ?? '')), 0, 3));
+        $name   = mb_substr(trim((string) ($_POST['name'] ?? '')), 0, 80);
+        if ($name === '') $back('Inserisci il nome del servizio.', 'services');
+        $args = [$letter, $name, $color($_POST['color'] ?? ''), (int) ($_POST['sort_order'] ?? 0), isset($_POST['active']) ? 1 : 0];
+        if ($action === 'add_service') {
+            $pdo->prepare("INSERT INTO queue_services (letter, name, color, sort_order, active) VALUES (?, ?, ?, ?, ?)")->execute($args);
+        } else {
+            $args[] = (int) $_POST['id'];
+            $pdo->prepare("UPDATE queue_services SET letter = ?, name = ?, color = ?, sort_order = ?, active = ? WHERE id = ?")->execute($args);
+        }
+        logActivity('queue_service_saved', 'queue_service', null, $name);
+        $back('Servizio salvato.', 'services');
+    }
 
-// Users
-$stmt = $pdo->query("SELECT COUNT(*) as count FROM users WHERE active = 1");
-$stats['users'] = $stmt->fetch()['count'];
+    if ($action === 'save_slide' && !empty($_POST['delete'])) {
+        $pdo->prepare("DELETE FROM queue_slides WHERE id = ?")->execute([(int) $_POST['id']]);
+        $back('Riquadro eliminato.', 'slides');
+    }
 
-// Menu items
-$stmt = $pdo->query("SELECT COUNT(*) as count FROM menu_items WHERE active = 1");
-$stats['menu_items'] = $stmt->fetch()['count'];
+    if ($action === 'add_slide' || $action === 'save_slide') {
+        $title = mb_substr(trim((string) ($_POST['title'] ?? '')), 0, 120);
+        if ($title === '') $back('Inserisci il titolo del riquadro.', 'slides');
+        $img = queueSaveImage('image');
+        if (!empty($_FILES['image']['name']) && !$img) $back('Immagine non valida (JPG, PNG, WebP o GIF, massimo 8 MB).', 'slides');
+        $sub   = mb_substr(trim((string) ($_POST['subtitle'] ?? '')), 0, 255) ?: null;
+        $price = mb_substr(trim((string) ($_POST['price'] ?? '')), 0, 40) ?: null;
+        $sort  = (int) ($_POST['sort_order'] ?? 0);
+        $act   = isset($_POST['active']) ? 1 : 0;
+        if ($action === 'add_slide') {
+            $pdo->prepare("INSERT INTO queue_slides (title, subtitle, price, image_path, sort_order, active) VALUES (?, ?, ?, ?, ?, ?)")
+                ->execute([$title, $sub, $price, $img, $sort, $act]);
+        } else {
+            $id = (int) $_POST['id'];
+            if ($img || isset($_POST['remove_image'])) {
+                $pdo->prepare("UPDATE queue_slides SET image_path = ? WHERE id = ?")->execute([$img, $id]);
+            }
+            $pdo->prepare("UPDATE queue_slides SET title = ?, subtitle = ?, price = ?, sort_order = ?, active = ? WHERE id = ?")
+                ->execute([$title, $sub, $price, $sort, $act, $id]);
+        }
+        $back('Riquadro salvato.', 'slides');
+    }
 
-// Recent orders
-$stmt = $pdo->query("
-    SELECT o.*, COALESCE(o.table_label, t.table_number) AS table_number, u.full_name as waiter_name
-    FROM orders o
-    JOIN tables_restaurant t ON o.table_id = t.id
-    JOIN users u ON o.waiter_id = u.id
-    ORDER BY o.created_at DESC
-    LIMIT 10
-");
-$recentOrders = $stmt->fetchAll();
+    if ($action === 'save_settings') {
+        $city = trim((string) ($_POST['weather_city'] ?? ''));
+        $msg  = 'Impostazioni salvate.';
+        if ($city !== '' && mb_strtolower($city) !== mb_strtolower((string) $cfg['weather_city'])) {
+            $geo = queueGeocode($city);
+            if ($geo) {
+                $cfg['weather_city'] = $geo['name'];
+                $cfg['weather_lat']  = $geo['lat'];
+                $cfg['weather_lon']  = $geo['lon'];
+            } else {
+                $msg = "Impostazioni salvate, ma la città \"$city\" non è stata trovata: il meteo resta su {$cfg['weather_city']}.";
+            }
+        }
+        $news = trim((string) ($_POST['news_custom'] ?? '')) ?: (string) ($_POST['news_url'] ?? '');
+        $cfg['news_url']      = filter_var($news, FILTER_VALIDATE_URL) ? $news : ($news === '' ? '' : $cfg['news_url']);
+        $cfg['brand']         = mb_substr(trim((string) ($_POST['brand'] ?? '')), 0, 60);
+        $cfg['totem_title']   = mb_substr(trim((string) ($_POST['totem_title'] ?? '')), 0, 80) ?: 'Prendi il tuo numero';
+        $cfg['ticket_header'] = mb_substr(trim((string) ($_POST['ticket_header'] ?? '')), 0, 40);
+        $cfg['ticket_footer'] = mb_substr(trim((string) ($_POST['ticket_footer'] ?? '')), 0, 200);
+        $cfg['slide_seconds'] = max(3, min(120, (int) ($_POST['slide_seconds'] ?? 8)));
+        $cfg['printer_host']  = preg_replace('/[^A-Za-z0-9.\-:]/', '', (string) ($_POST['printer_host'] ?? ''));
+        $cfg['printer_port']  = max(1, min(65535, (int) ($_POST['printer_port'] ?? 9100)));
+        $cfg['printer_width'] = in_array((int) ($_POST['printer_width'] ?? 48), [32, 42, 48], true) ? (int) $_POST['printer_width'] : 48;
+        setSetting('queue', $cfg);
+        logActivity('queue_settings_updated', 'settings', null, null);
+        $back($msg, 'settings');
+    }
 
-$pageTitle = t('admin_dashboard');
+    if ($action === 'test_print') {
+        $res = queuePrintTicket(['id' => 0, 'service' => 'Prova stampa', 'label' => 'A000', 'ahead' => 0, 'time' => date('d/m/Y H:i')]);
+        $back($res['ok'] ? 'Biglietto di prova inviato alla stampante.' : 'Stampa non riuscita: ' . $res['error'], 'settings');
+    }
 
+    if ($action === 'new_key') {
+        $cfg['key'] = bin2hex(random_bytes(12));
+        setSetting('queue', $cfg);
+        $back('Nuovi link generati: aggiorna l\'indirizzo sul totem e sul monitor.', 'links');
+    }
+
+    if ($action === 'reset_today') {
+        queueReset((int) ($_POST['service_id'] ?? 0) ?: null);
+        logActivity('queue_reset', 'queue_service', (int) ($_POST['service_id'] ?? 0) ?: null, null);
+        $back('Coda di oggi azzerata: il prossimo biglietto riparte da 1.', 'services');
+    }
+}
+
+$flash    = $_SESSION['queue_flash'] ?? null;
+unset($_SESSION['queue_flash']);
+$services = queueServices(false);
+$slides   = queueSlides(false);
+$state    = [];
+foreach (queueState()['services'] as $s) $state[$s['id']] = $s;
+
+$https = ($_SERVER['HTTPS'] ?? '') === 'on' || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
+$base  = ($https ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'numeratore.upgradesrls.com');
+$links = [
+    ['Totem (clienti)', 'fa-hand-pointer', $base . '/queue/totem.php?k=' . $cfg['key'], 'Chrome a schermo intero: chrome --kiosk --kiosk-printing "<link>"'],
+    ['Monitor', 'fa-tv', $base . '/queue/monitor.php?k=' . $cfg['key'], 'Chrome a schermo intero: chrome --kiosk --autoplay-policy=no-user-gesture-required "<link>"'],
+    ['Pagina operatore', 'fa-user-tie', $base . '/queue/operator.php', 'Serve l\'accesso con un utente amministratore o operatore (Amministrazione › Utenti).'],
+];
+
+$v = static fn($val) => htmlspecialchars((string) ($val ?? ''), ENT_QUOTES, 'UTF-8');
+$pageTitle = 'Eliminacode';
 include __DIR__ . '/../includes/header.php';
 ?>
+<style>
+.qa-link { display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:12px 0; border-bottom:1px solid var(--border, #eee); }
+.qa-link:last-child { border-bottom:0; }
+.qa-link .t { font-weight:700; min-width:170px; }
+.qa-link input { flex:1; min-width:240px; font-family:monospace; font-size:.85rem; }
+.qa-hint { font-size:.82rem; color:var(--text-secondary); width:100%; }
+.qa-table { width:100%; border-collapse:collapse; }
+.qa-table td, .qa-table th { padding:8px 6px; border-bottom:1px solid var(--border, #eee); vertical-align:middle; text-align:left; }
+.qa-table input[type=text], .qa-table input[type=number] { width:100%; }
+.qa-dot { display:inline-block; width:14px; height:14px; border-radius:50%; vertical-align:middle; }
+.qa-thumb { width:84px; height:56px; object-fit:cover; border-radius:6px; background:#ddd; display:block; }
+.qa-note { font-size:.9rem; color:var(--text-secondary); }
+.qa-slide { border:1px solid var(--border, #eee); border-radius:10px; padding:12px; margin-bottom:12px; display:grid; grid-template-columns:100px 1fr; gap:14px; }
+@media (max-width:700px){ .qa-slide { grid-template-columns:1fr; } .qa-wide { overflow-x:auto; } }
+</style>
 
 <div class="page-header">
-    <h1><i class="fas fa-tachometer-alt"></i> <?= te('dashboard') ?></h1>
+    <h1><i class="fas fa-ticket"></i> Eliminacode</h1>
+    <a href="/queue/operator.php" class="btn btn-primary"><i class="fas fa-forward"></i> Pagina operatore</a>
 </div>
 
-<!-- Stats -->
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-icon primary">
-            <i class="fas fa-receipt"></i>
-        </div>
-        <div>
-            <div class="stat-value"><?= $stats['today']['count'] ?></div>
-            <div class="stat-label"><?= te('orders_today') ?></div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon success">
-            <i class="fas fa-euro-sign"></i>
-        </div>
-        <div>
-            <div class="stat-value"><?= formatCurrency($stats['today']['total']) ?></div>
-            <div class="stat-label"><?= te('revenue_today') ?></div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon warning">
-            <i class="fas fa-clipboard-list"></i>
-        </div>
-        <div>
-            <div class="stat-value"><?= $stats['active_orders'] ?></div>
-            <div class="stat-label"><?= te('active_orders') ?></div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon info">
-            <i class="fas fa-chair"></i>
-        </div>
-        <div>
-            <div class="stat-value"><?= $stats['tables']['occupied'] ?? 0 ?>/<?= $stats['tables']['total'] ?? 0 ?></div>
-            <div class="stat-label"><?= te('tables_occupied') ?></div>
-        </div>
-    </div>
-</div>
+<?php if ($flash): ?>
+    <div class="alert mb-lg" style="background:rgba(39,174,96,.1);color:var(--success);padding:14px;border-radius:8px;"><i class="fas fa-info-circle"></i> <?= $v($flash) ?></div>
+<?php endif; ?>
 
-<?php
-// Paid tables still to be cleared and laid again.
-$toLay = [];
-if (tablesToLay()) {
-    $toLay = getDBConnection()->query("
-        SELECT t.id, t.table_number, t.needs_reset_at, r.name AS room_name
-        FROM tables_restaurant t JOIN rooms r ON r.id = t.room_id
-        WHERE t.needs_reset_at IS NOT NULL AND t.status = 'free'
-        ORDER BY t.needs_reset_at
-    ")->fetchAll();
-}
-?>
-<?php if ($toLay): ?>
-<div class="card mb-lg lay-card">
-    <div class="card-header">
-        <h2><i class="fas fa-broom" style="color:#2563eb;"></i> <?= te('tables_to_lay_title') ?></h2>
-        <span class="badge" style="background:#2563eb;color:#fff;"><?= count($toLay) ?></span>
-    </div>
-    <div class="card-body lay-list">
-        <?php foreach ($toLay as $lt): ?>
-            <div class="lay-row">
-                <div><strong><?= te('table') ?> <?= htmlspecialchars($lt['table_number']) ?></strong>
-                    <span class="text-muted"> · <?= htmlspecialchars($lt['room_name']) ?> · <?= te('table_to_lay_since', ['time' => date('H:i', strtotime($lt['needs_reset_at']))]) ?></span></div>
-                <?= tableLaidButton((int) $lt['id']) ?: '<span class="text-muted" style="font-size:.85rem;"><i class="fas fa-user-tie"></i> ' . te('table_laid_by_waiter') . '</span>' ?>
+<div class="card" id="links">
+    <div class="card-header"><h2><i class="fas fa-link"></i> Link degli schermi</h2></div>
+    <div class="card-body">
+        <?php foreach ($links as [$title, $icon, $url, $hint]): ?>
+            <div class="qa-link">
+                <span class="t"><i class="fas <?= $icon ?>"></i> <?= $v($title) ?></span>
+                <input type="text" class="form-control" readonly value="<?= $v($url) ?>" onclick="this.select()">
+                <button type="button" class="btn btn-outline" onclick="navigator.clipboard.writeText(this.previousElementSibling.value);this.textContent='Copiato'">Copia</button>
+                <a class="btn btn-outline" href="<?= $v($url) ?>" target="_blank"><i class="fas fa-up-right-from-square"></i> Apri</a>
+                <div class="qa-hint"><?= $v($hint) ?></div>
             </div>
         <?php endforeach; ?>
+        <form method="POST" class="mt-md" onsubmit="return confirm('I link attuali del totem e del monitor smetteranno di funzionare. Continuare?')">
+            <input type="hidden" name="action" value="new_key">
+            <button class="btn btn-outline"><i class="fas fa-rotate"></i> Genera nuovi link</button>
+        </form>
     </div>
 </div>
-<?php endif; ?>
-<?= tableLayWatch() ?>
 
-<!-- Recent Orders -->
-<div class="card">
-    <div class="card-header">
-        <h2><?= te('recent_orders') ?></h2>
-        <a href="/admin/orders.php" class="btn btn-sm btn-outline"><?= te('view_all') ?></a>
-    </div>
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th><?= te('order_no') ?></th>
-                <th><?= te('table') ?></th>
-                <th><?= te('waiter') ?></th>
-                <th><?= te('total') ?></th>
-                <th><?= te('status') ?></th>
-                <th><?= te('time') ?></th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($recentOrders as $order): ?>
+<div class="card mt-lg" id="services">
+    <div class="card-header"><h2><i class="fas fa-list-ol"></i> Servizi (pulsanti del totem)</h2></div>
+    <div class="card-body qa-wide">
+        <p class="qa-note">Ogni servizio ha la sua numerazione (A001, B001…), che riparte da 1 ogni giorno.</p>
+        <table class="qa-table">
+            <tr><th>Lettera</th><th>Nome</th><th>Colore</th><th>Ordine</th><th>Attivo</th><th>Oggi</th><th></th></tr>
+            <?php foreach ($services as $s): $st = $state[$s['id']] ?? null; $f = 'svc' . (int) $s['id']; ?>
                 <tr>
-                    <td><strong><?= htmlspecialchars($order['order_number']) ?></strong></td>
-                    <td><?= htmlspecialchars($order['table_number']) ?></td>
-                    <td><?= htmlspecialchars($order['waiter_name']) ?></td>
-                    <td><strong><?= formatCurrency($order['total']) ?></strong></td>
-                    <td>
-                        <span class="badge badge-<?= 
-                            $order['status'] === 'paid' ? 'success' : 
-                            ($order['status'] === 'cancelled' ? 'danger' : 
-                            ($order['status'] === 'bill_requested' ? 'warning' : 'info')) 
-                        ?>">
-                            <?= htmlspecialchars(statusLabel($order['status'])) ?>
-                        </span>
-                    </td>
-                    <td><?= date('H:i', strtotime($order['created_at'])) ?></td>
+                    <td style="width:80px"><input form="<?= $f ?>" type="text" name="letter" maxlength="3" class="form-control" value="<?= $v($s['letter']) ?>"></td>
+                    <td><input form="<?= $f ?>" type="text" name="name" maxlength="80" class="form-control" value="<?= $v($s['name']) ?>" required></td>
+                    <td style="width:70px"><input form="<?= $f ?>" type="color" name="color" value="<?= $v($s['color']) ?>"></td>
+                    <td style="width:80px"><input form="<?= $f ?>" type="number" name="sort_order" class="form-control" value="<?= (int) $s['sort_order'] ?>"></td>
+                    <td style="width:60px"><input form="<?= $f ?>" type="checkbox" name="active" <?= $s['active'] ? 'checked' : '' ?>></td>
+                    <td class="qa-note" style="white-space:nowrap"><?= $st ? 'Emessi fino a ' . $v($st['last_taken'] ?? '—') . '<br>In attesa: ' . (int) $st['waiting'] : '—' ?></td>
+                    <td style="white-space:nowrap"><button form="<?= $f ?>" class="btn btn-primary btn-sm" title="Salva"><i class="fas fa-save"></i></button></td>
                 </tr>
             <?php endforeach; ?>
-        </tbody>
-    </table>
+            <tr>
+                <td><input form="svcNew" type="text" name="letter" maxlength="3" class="form-control" placeholder="B"></td>
+                <td><input form="svcNew" type="text" name="name" maxlength="80" class="form-control" placeholder="Nuovo servizio, es. Panetteria" required></td>
+                <td><input form="svcNew" type="color" name="color" value="#2563eb"></td>
+                <td><input form="svcNew" type="number" name="sort_order" class="form-control" value="<?= count($services) + 1 ?>"></td>
+                <td><input form="svcNew" type="checkbox" name="active" checked></td>
+                <td></td>
+                <td><button form="svcNew" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Aggiungi</button></td>
+            </tr>
+        </table>
+        <?php foreach ($services as $s): ?>
+            <form method="POST" id="svc<?= (int) $s['id'] ?>"><input type="hidden" name="action" value="save_service"><input type="hidden" name="id" value="<?= (int) $s['id'] ?>"></form>
+        <?php endforeach; ?>
+        <form method="POST" id="svcNew"><input type="hidden" name="action" value="add_service"></form>
+        <form method="POST" class="mt-md" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center" onsubmit="return confirm('Cancellare i biglietti di oggi? La numerazione ripartirà da 1.')">
+            <input type="hidden" name="action" value="reset_today">
+            <select name="service_id" class="form-control" style="width:auto">
+                <option value="0">Tutti i servizi</option>
+                <?php foreach ($services as $s): ?><option value="<?= (int) $s['id'] ?>"><?= $v($s['letter'] . ' · ' . $s['name']) ?></option><?php endforeach; ?>
+            </select>
+            <button class="btn btn-outline" style="color:var(--danger)"><i class="fas fa-eraser"></i> Azzera la coda di oggi</button>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-lg" id="slides">
+    <div class="card-header"><h2><i class="fas fa-images"></i> Riquadri prodotti sul monitor</h2></div>
+    <div class="card-body">
+        <p class="qa-note">I riquadri attivi ruotano sul monitor. Usa foto orizzontali (es. 1600×1000).</p>
+        <?php foreach ($slides as $s): ?>
+            <form method="POST" enctype="multipart/form-data" class="qa-slide">
+                <input type="hidden" name="action" value="save_slide"><input type="hidden" name="id" value="<?= (int) $s['id'] ?>">
+                <div><?php if ($s['image_path']): ?><img class="qa-thumb" src="<?= $v($s['image_path']) ?>" alt=""><?php else: ?><span class="qa-thumb"></span><?php endif; ?></div>
+                <div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Titolo</label><input type="text" name="title" maxlength="120" class="form-control" value="<?= $v($s['title']) ?>" required></div>
+                        <div class="form-group"><label class="form-label">Prezzo / etichetta</label><input type="text" name="price" maxlength="40" class="form-control" value="<?= $v($s['price']) ?>" placeholder="€ 3,50"></div>
+                    </div>
+                    <div class="form-group"><label class="form-label">Descrizione</label><input type="text" name="subtitle" maxlength="255" class="form-control" value="<?= $v($s['subtitle']) ?>"></div>
+                    <div class="form-row" style="align-items:center">
+                        <div class="form-group"><label class="form-label">Nuova foto</label><input type="file" name="image" accept="image/*" class="form-control"></div>
+                        <div class="form-group" style="max-width:110px"><label class="form-label">Ordine</label><input type="number" name="sort_order" class="form-control" value="<?= (int) $s['sort_order'] ?>"></div>
+                    </div>
+                    <label><input type="checkbox" name="active" <?= $s['active'] ? 'checked' : '' ?>> Attivo</label>
+                    <?php if ($s['image_path']): ?>&nbsp; <label><input type="checkbox" name="remove_image"> Togli la foto</label><?php endif; ?>
+                    <div class="mt-md" style="display:flex;gap:8px">
+                        <button class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Salva</button>
+                        <button class="btn btn-outline btn-sm" style="color:var(--danger)" name="delete" value="1" formnovalidate onclick="return confirm('Eliminare questo riquadro?')"><i class="fas fa-trash"></i> Elimina</button>
+                    </div>
+                </div>
+            </form>
+        <?php endforeach; ?>
+        <h3 style="font-size:1rem" class="mt-lg">Nuovo riquadro</h3>
+        <form method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="action" value="add_slide">
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Titolo</label><input type="text" name="title" maxlength="120" class="form-control" placeholder="Focaccia del giorno" required></div>
+                <div class="form-group"><label class="form-label">Prezzo / etichetta</label><input type="text" name="price" maxlength="40" class="form-control" placeholder="€ 3,50 o NOVITÀ"></div>
+            </div>
+            <div class="form-group"><label class="form-label">Descrizione</label><input type="text" name="subtitle" maxlength="255" class="form-control" placeholder="Pomodorini, origano e olio extravergine"></div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Foto</label><input type="file" name="image" accept="image/*" class="form-control"></div>
+                <div class="form-group" style="max-width:110px"><label class="form-label">Ordine</label><input type="number" name="sort_order" class="form-control" value="<?= count($slides) + 1 ?>"></div>
+            </div>
+            <input type="hidden" name="active" value="1">
+            <button class="btn btn-success"><i class="fas fa-plus"></i> Aggiungi riquadro</button>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-lg" id="settings">
+    <div class="card-header"><h2><i class="fas fa-sliders-h"></i> Impostazioni</h2></div>
+    <form method="POST" class="card-body">
+        <input type="hidden" name="action" value="save_settings">
+        <div class="form-group"><label class="form-label">Nome dell'attività (in alto nelle pagine, sul totem e sul monitor)</label><input type="text" name="brand" maxlength="60" class="form-control" value="<?= $v($cfg['brand']) ?>" placeholder="<?= $v(APP_DEFAULT_NAME) ?>"></div>
+        <h3 style="font-size:1rem" class="mt-lg">Totem e biglietto</h3>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Titolo sul totem</label><input type="text" name="totem_title" maxlength="80" class="form-control" value="<?= $v($cfg['totem_title']) ?>"></div>
+            <div class="form-group"><label class="form-label">Intestazione del biglietto (vuoto = nome del locale)</label><input type="text" name="ticket_header" maxlength="40" class="form-control" value="<?= $v($cfg['ticket_header']) ?>"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Messaggio in fondo al biglietto</label><textarea name="ticket_footer" maxlength="200" rows="2" class="form-control"><?= $v($cfg['ticket_footer']) ?></textarea></div>
+
+        <h3 style="font-size:1rem" class="mt-lg">Stampante di rete del totem (ESC/POS)</h3>
+        <p class="qa-note">Stampante termica raggiungibile dal server sulla porta 9100. Se lasci vuoto l'indirizzo, o la stampante non risponde, il totem stampa il biglietto dal browser.</p>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Indirizzo IP</label><input type="text" name="printer_host" class="form-control" value="<?= $v($cfg['printer_host']) ?>" placeholder="192.168.1.50"></div>
+            <div class="form-group" style="max-width:140px"><label class="form-label">Porta</label><input type="number" name="printer_port" class="form-control" value="<?= (int) $cfg['printer_port'] ?>"></div>
+            <div class="form-group" style="max-width:200px"><label class="form-label">Larghezza carta</label>
+                <select name="printer_width" class="form-control">
+                    <?php foreach ([48 => '80 mm (48 caratteri)', 42 => '80 mm (42 caratteri)', 32 => '58 mm (32 caratteri)'] as $w => $l): ?>
+                        <option value="<?= $w ?>" <?= (int) $cfg['printer_width'] === $w ? 'selected' : '' ?>><?= $l ?></option>
+                    <?php endforeach; ?>
+                </select></div>
+        </div>
+
+        <h3 style="font-size:1rem" class="mt-lg">Monitor</h3>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Città del meteo</label><input type="text" name="weather_city" class="form-control" value="<?= $v($cfg['weather_city']) ?>"></div>
+            <div class="form-group" style="max-width:220px"><label class="form-label">Secondi per riquadro</label><input type="number" min="3" max="120" name="slide_seconds" class="form-control" value="<?= (int) $cfg['slide_seconds'] ?>"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Notizie</label>
+                <select name="news_url" class="form-control">
+                    <?php foreach (QUEUE_NEWS_PRESETS as $u => $l): ?>
+                        <option value="<?= $v($u) ?>" <?= $cfg['news_url'] === $u ? 'selected' : '' ?>><?= $v($l) ?></option>
+                    <?php endforeach; ?>
+                    <option value="" <?= $cfg['news_url'] === '' ? 'selected' : '' ?>>Nessuna notizia</option>
+                </select></div>
+            <div class="form-group"><label class="form-label">Oppure indirizzo di un feed RSS</label>
+                <input type="url" name="news_custom" class="form-control" placeholder="https://…/rss.xml" value="<?= isset(QUEUE_NEWS_PRESETS[$cfg['news_url']]) || $cfg['news_url'] === '' ? '' : $v($cfg['news_url']) ?>"></div>
+        </div>
+        <button class="btn btn-primary"><i class="fas fa-save"></i> Salva</button>
+    </form>
+    <?php if (trim((string) $cfg['printer_host']) !== ''): ?>
+        <form method="POST" class="card-body" style="padding-top:0">
+            <input type="hidden" name="action" value="test_print">
+            <button class="btn btn-outline"><i class="fas fa-print"></i> Stampa un biglietto di prova</button>
+        </form>
+    <?php endif; ?>
 </div>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

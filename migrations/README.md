@@ -26,7 +26,7 @@ server — and without forgetting which changes have already been applied.
 
 3. Commit & push (this repo pushes on every change), then on the server:
    ```bash
-   cd /var/www/html/order
+   cd /var/www/html/numeratore
    git pull origin main
    php migrate.php          # applies only the new files
    ```
