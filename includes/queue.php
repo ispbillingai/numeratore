@@ -100,6 +100,10 @@ function queueTake(int $serviceId): ?array
         $pdo->prepare("INSERT INTO queue_tickets (service_id, ticket_date, number, created_at) VALUES (?, ?, ?, ?)")
             ->execute([$serviceId, $today, $number, $now]);
         $id = (int) $pdo->lastInsertId();
+        // Daily count per service for the statistics; it survives a manual reset of the queue.
+        $pdo->prepare("INSERT INTO queue_daily_counts (count_date, service_id, tickets) VALUES (?, ?, 1)
+                       ON DUPLICATE KEY UPDATE tickets = tickets + 1")
+            ->execute([$today, $serviceId]);
         $st = $pdo->prepare("SELECT COUNT(*) FROM queue_tickets WHERE service_id = ? AND ticket_date = ? AND status = 'waiting' AND number < ?");
         $st->execute([$serviceId, $today, $number]);
         $ahead = (int) $st->fetchColumn();

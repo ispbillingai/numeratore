@@ -9,6 +9,8 @@ at the user's request. Integrating it into other projects is a later decision of
 - `queue/totem.php`, `queue/monitor.php` (no login, `?k=` = `settings.queue.key`), `queue/operator.php`.
 - `api/queue.php` — state, feed (weather/news/tiles), take, next/recall/call.
 - `admin/index.php` (Eliminacode admin), `admin/users.php`, `admin/activity.php`.
+- `admin/stats.php` (Statistiche): tickets per day / month and per service (reparto), CSV export. Source is
+  `queue_daily_counts` (+1 per ticket in `queueTake()`), which survives the midnight and manual resets.
 - `includes/queue.php` (all queue logic, settings in `settings.queue`), `includes/functions.php`
   (session, auth, `appName()`), `includes/ThermalPrinter.php` (ESC/POS ticket over TCP 9100).
 - Roles: `admin`, `operator`. Users are never deleted, only disabled.
