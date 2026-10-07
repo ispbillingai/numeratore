@@ -129,9 +129,9 @@ foreach (queueState()['services'] as $s) $state[$s['id']] = $s;
 $https = ($_SERVER['HTTPS'] ?? '') === 'on' || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
 $base  = ($https ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'eliminacode.upgradesrls.com');
 $links = [
-    ['Totem (clienti)', 'fa-hand-pointer', $base . '/queue/totem.php?k=' . $cfg['key'], 'Chrome a schermo intero: chrome --kiosk --kiosk-printing "<link>"'],
-    ['Monitor', 'fa-tv', $base . '/queue/monitor.php?k=' . $cfg['key'], 'Chrome a schermo intero: chrome --kiosk --autoplay-policy=no-user-gesture-required "<link>"'],
-    ['Pagina operatore', 'fa-user-tie', $base . '/queue/operator.php', 'Serve l\'accesso con un utente amministratore o operatore (Amministrazione › Utenti).'],
+    ['Totem (clienti)', 'fa-hand-pointer', $base . '/queue/totem.php?k=' . $cfg['key'], 'Chrome a schermo intero: chrome --kiosk --kiosk-printing "<link>"', null],
+    ['Monitor', 'fa-tv', $base . '/queue/monitor.php?k=' . $cfg['key'], 'Audio attivo da subito: sul PC Windows del monitor scarica e apri "Avvio monitor" (Chrome a schermo intero con l\'audio già attivo; per farlo partire all\'accensione copialo in shell:startup). Altri sistemi: chrome --kiosk --autoplay-policy=no-user-gesture-required "<link>". Aperto in un browser normale, l\'audio parte al primo tocco o tasto.', '/admin/monitor-launcher.php'],
+    ['Pagina operatore', 'fa-user-tie', $base . '/queue/operator.php', 'Serve l\'accesso con un utente amministratore o operatore (Amministrazione › Utenti).', null],
 ];
 
 $v = static fn($val) => htmlspecialchars((string) ($val ?? ''), ENT_QUOTES, 'UTF-8');
@@ -166,12 +166,13 @@ include __DIR__ . '/../includes/header.php';
 <div class="card" id="links">
     <div class="card-header"><h2><i class="fas fa-link"></i> Link degli schermi</h2></div>
     <div class="card-body">
-        <?php foreach ($links as [$title, $icon, $url, $hint]): ?>
+        <?php foreach ($links as [$title, $icon, $url, $hint, $launcher]): ?>
             <div class="qa-link">
                 <span class="t"><i class="fas <?= $icon ?>"></i> <?= $v($title) ?></span>
                 <input type="text" class="form-control" readonly value="<?= $v($url) ?>" onclick="this.select()">
                 <button type="button" class="btn btn-outline" onclick="navigator.clipboard.writeText(this.previousElementSibling.value);this.textContent='Copiato'">Copia</button>
                 <a class="btn btn-outline" href="<?= $v($url) ?>" target="_blank"><i class="fas fa-up-right-from-square"></i> Apri</a>
+                <?php if ($launcher): ?><a class="btn btn-primary" href="<?= $v($launcher) ?>"><i class="fas fa-volume-high"></i> Avvio monitor (Windows)</a><?php endif; ?>
                 <div class="qa-hint"><?= $v($hint) ?></div>
             </div>
         <?php endforeach; ?>

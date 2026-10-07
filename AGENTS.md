@@ -9,9 +9,6 @@ at the user's request. Integrating it into other projects is a later decision of
 - `queue/totem.php`, `queue/monitor.php` (no login, `?k=` = `settings.queue.key`), `queue/operator.php`.
 - `api/queue.php` — state, feed (weather/news/tiles), take, next/recall/call.
 - `admin/index.php` (Eliminacode admin), `admin/users.php`, `admin/activity.php`.
-- `admin/monitor-launcher.php`: downloads "Monitor eliminacode.bat" (Chrome/Edge kiosk with
-  `--autoplay-policy=no-user-gesture-required`, own profile) so the monitor's sound is on without a click.
-  Browsers never let a page turn sound on by itself; in a normal browser the first touch/key does it.
 - `admin/stats.php` (Statistiche): tickets per day / month and per service (reparto), CSV export. Source is
   `queue_daily_counts` (+1 per ticket in `queueTake()`), which survives the midnight and manual resets.
 - `includes/queue.php` (all queue logic, settings in `settings.queue`), `includes/functions.php`
@@ -22,7 +19,7 @@ at the user's request. Integrating it into other projects is a later decision of
 ## Where it runs
 - Server 217.160.131.242 (IONOS Ubuntu 24.04, Apache 2.4, PHP 8.3, MariaDB 10.11), shared with
   Focacciami (`/var/www/html/focacciami`… see memory) and chiamata. SSH as root: credentials and the plink
-  one-liner are in Claude's local memory `pub-server.md`, never in git.
+  one-liner are in Codex's local memory `pub-server.md`, never in git.
 - App folder `/var/www/html/eliminacode`, branch `main`.
 - https://eliminacode.upgradesrls.com — vhosts `eliminacode.conf` (:80 → https) and
   `eliminacode-le-ssl.conf` (:443, Let's Encrypt, auto-renew). The old name numeratore.upgradesrls.com

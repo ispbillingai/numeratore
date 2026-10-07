@@ -6,8 +6,8 @@
  * Left: the number being served per service (flashes with a chime and a voice
  * on every call) and the last numbers called. Right: product tiles in rotation
  * (Amministrazione › Eliminacode) and the weather. Bottom: news headlines.
- * Sound needs one click on the screen, or Chrome started with
- * --autoplay-policy=no-user-gesture-required.
+ * Sound is on by default when Chrome is started with --autoplay-policy=no-user-gesture-required
+ * (admin/monitor-launcher.php downloads a Windows file that does it); otherwise one touch/key turns it on.
  */
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/queue.php';
@@ -152,13 +152,26 @@ tick(); setInterval(tick, 1000);
 
 /* ---------- Sound ---------- */
 let audio = null;
+// Sound is on from the start when the browser allows it (the launcher in Amministrazione ›
+// Eliminacode starts Chrome with --autoplay-policy=no-user-gesture-required); otherwise the
+// first touch, click or key press (also a TV remote) turns it on.
 function initAudio() {
-    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); } catch (e) {}
-    setTimeout(() => q('sound').style.display = (audio && audio.state === 'running') ? 'none' : 'block', 300);
+    try {
+        if (!audio) {
+            audio = new (window.AudioContext || window.webkitAudioContext)();
+            audio.onstatechange = soundBanner;
+        }
+        audio.resume().then(soundBanner, soundBanner);
+    } catch (e) {}
+    setTimeout(soundBanner, 300);
 }
-document.addEventListener('click', initAudio);
+function soundBanner() {
+    q('sound').style.display = (audio && audio.state === 'running') ? 'none' : 'block';
+}
+['pointerdown', 'touchstart', 'keydown', 'click'].forEach(ev => document.addEventListener(ev, initAudio, { passive: true }));
 initAudio();
 function chime() {
+    if (audio && audio.state !== 'running') audio.resume().catch(() => {});
     if (!audio || audio.state !== 'running') return;
     [[880, 0], [660, .45]].forEach(([f, t]) => {
         const o = audio.createOscillator(), g = audio.createGain();
