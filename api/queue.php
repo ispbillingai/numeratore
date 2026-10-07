@@ -41,6 +41,8 @@ try {
                 'subtitle' => (string) ($s['subtitle'] ?? ''),
                 'price'    => (string) ($s['price'] ?? ''),
                 'image'    => (string) ($s['image_path'] ?? ''),
+                'video'    => (string) ($s['video_path'] ?? ''),
+                'audio'    => (bool) ($s['video_audio'] ?? false),
             ], queueSlides());
             jsonResponse([
                 'success' => true,

@@ -304,20 +304,33 @@ function queueSlides(bool $activeOnly = true): array
     return getDBConnection()->query($sql)->fetchAll();
 }
 
+/** Largest tile video (also raised in .htaccess: upload_max_filesize / post_max_size). */
+const QUEUE_VIDEO_MAX_MB = 200;
+
 /** Save an uploaded tile photo to assets/uploads/queue; web path or null. */
 function queueSaveImage(string $field): ?string
+{
+    return queueSaveUpload($field, ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'], 8, 'slide');
+}
+
+/** Save an uploaded tile video (MP4 / WebM / MOV); web path or null. */
+function queueSaveVideo(string $field): ?string
+{
+    return queueSaveUpload($field, ['video/mp4' => 'mp4', 'video/x-m4v' => 'mp4', 'video/webm' => 'webm', 'video/quicktime' => 'mov'], QUEUE_VIDEO_MAX_MB, 'video');
+}
+
+function queueSaveUpload(string $field, array $extMap, int $maxMb, string $prefix): ?string
 {
     if (empty($_FILES[$field]) || ($_FILES[$field]['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
         return null;
     }
     $f = $_FILES[$field];
-    if ($f['size'] > 8 * 1024 * 1024) {
+    if ($f['size'] > $maxMb * 1024 * 1024) {
         return null;
     }
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mime  = finfo_file($finfo, $f['tmp_name']);
     finfo_close($finfo);
-    $extMap = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
     if (!isset($extMap[$mime])) {
         return null;
     }
@@ -325,11 +338,19 @@ function queueSaveImage(string $field): ?string
     if (!is_dir($dir)) {
         @mkdir($dir, 0775, true);
     }
-    $name = 'slide_' . date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $extMap[$mime];
+    $name = $prefix . '_' . date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $extMap[$mime];
     if (!move_uploaded_file($f['tmp_name'], $dir . '/' . $name)) {
         return null;
     }
     return '/assets/uploads/queue/' . $name;
+}
+
+/** Delete an uploaded tile file (videos are big: no leftovers on the disk). */
+function queueDeleteUpload(?string $path): void
+{
+    if ($path && preg_match('#^/assets/uploads/queue/[\w.-]+$#', $path)) {
+        @unlink(__DIR__ . '/..' . $path);
+    }
 }
 
 /** GET a URL (short timeouts: the monitor must never hang on a slow feed). */

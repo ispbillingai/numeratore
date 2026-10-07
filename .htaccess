@@ -19,6 +19,10 @@ AddDefaultCharset UTF-8
 <IfModule mod_php.c>
     php_value session.cookie_httponly 1
     php_value session.use_only_cookies 1
+    # Monitor tile videos up to 200 MB (QUEUE_VIDEO_MAX_MB in includes/queue.php)
+    php_value upload_max_filesize 200M
+    php_value post_max_size 210M
+    php_value max_input_time 600
 </IfModule>
 
 # Cache static assets
@@ -29,6 +33,8 @@ AddDefaultCharset UTF-8
     ExpiresByType image/png "access plus 1 month"
     ExpiresByType image/jpeg "access plus 1 month"
     ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType video/mp4 "access plus 1 month"
+    ExpiresByType video/webm "access plus 1 month"
 </IfModule>
 
 # Compress text files

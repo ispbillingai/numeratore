@@ -29,6 +29,10 @@ $back  = static function (string $msg, string $anchor = '') {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
+    // An upload bigger than post_max_size arrives as an empty POST: tell why instead of doing nothing.
+    if ($action === '' && !$_POST && !$_FILES && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+        $back('File troppo grande: il video può essere al massimo di ' . QUEUE_VIDEO_MAX_MB . ' MB.', 'slides');
+    }
 
     if ($action === 'add_service' || $action === 'save_service') {
         $letter = mb_strtoupper(mb_substr(preg_replace('/[^A-Za-z0-9]/', '', (string) ($_POST['letter'] ?? '')), 0, 3));
@@ -46,31 +50,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'save_slide' && !empty($_POST['delete'])) {
+        $old = $pdo->prepare("SELECT video_path FROM queue_slides WHERE id = ?");
+        $old->execute([(int) $_POST['id']]);
+        queueDeleteUpload($old->fetchColumn() ?: null);
         $pdo->prepare("DELETE FROM queue_slides WHERE id = ?")->execute([(int) $_POST['id']]);
         $back('Riquadro eliminato.', 'slides');
     }
 
     if ($action === 'add_slide' || $action === 'save_slide') {
+        $id    = (int) ($_POST['id'] ?? 0);
+        $cur   = ['image_path' => null, 'video_path' => null];
+        if ($action === 'save_slide') {
+            $st = $pdo->prepare("SELECT image_path, video_path FROM queue_slides WHERE id = ?");
+            $st->execute([$id]);
+            $cur = $st->fetch() ?: $cur;
+        }
         $title = mb_substr(trim((string) ($_POST['title'] ?? '')), 0, 120);
-        if ($title === '') $back('Inserisci il titolo del riquadro.', 'slides');
         $img = queueSaveImage('image');
         if (!empty($_FILES['image']['name']) && !$img) $back('Immagine non valida (JPG, PNG, WebP o GIF, massimo 8 MB).', 'slides');
+        $vid = queueSaveVideo('video');
+        if (!empty($_FILES['video']['name']) && !$vid) {
+            $err = (int) ($_FILES['video']['error'] ?? 0);
+            $back(in_array($err, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true) || ($_FILES['video']['size'] ?? 0) > QUEUE_VIDEO_MAX_MB * 1048576
+                ? 'Video troppo grande: massimo ' . QUEUE_VIDEO_MAX_MB . ' MB.'
+                : 'Video non valido: usa un file MP4 (H.264) o WebM.', 'slides');
+        }
+        $image = $img ?: (isset($_POST['remove_image']) ? null : $cur['image_path']);
+        $video = $vid ?: (isset($_POST['remove_video']) ? null : $cur['video_path']);
+        if ($title === '' && !$image && !$video) $back('Inserisci un titolo, una foto o un video.', 'slides');
+        if ($cur['video_path'] && $cur['video_path'] !== $video) queueDeleteUpload($cur['video_path']);
         $sub   = mb_substr(trim((string) ($_POST['subtitle'] ?? '')), 0, 255) ?: null;
         $price = mb_substr(trim((string) ($_POST['price'] ?? '')), 0, 40) ?: null;
         $sort  = (int) ($_POST['sort_order'] ?? 0);
         $act   = isset($_POST['active']) ? 1 : 0;
+        $audio = isset($_POST['video_audio']) ? 1 : 0;
         if ($action === 'add_slide') {
-            $pdo->prepare("INSERT INTO queue_slides (title, subtitle, price, image_path, sort_order, active) VALUES (?, ?, ?, ?, ?, ?)")
-                ->execute([$title, $sub, $price, $img, $sort, $act]);
+            $pdo->prepare("INSERT INTO queue_slides (title, subtitle, price, image_path, video_path, video_audio, sort_order, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+                ->execute([$title, $sub, $price, $image, $video, $audio, $sort, $act]);
         } else {
-            $id = (int) $_POST['id'];
-            if ($img || isset($_POST['remove_image'])) {
-                $pdo->prepare("UPDATE queue_slides SET image_path = ? WHERE id = ?")->execute([$img, $id]);
-            }
-            $pdo->prepare("UPDATE queue_slides SET title = ?, subtitle = ?, price = ?, sort_order = ?, active = ? WHERE id = ?")
-                ->execute([$title, $sub, $price, $sort, $act, $id]);
+            $pdo->prepare("UPDATE queue_slides SET title = ?, subtitle = ?, price = ?, image_path = ?, video_path = ?, video_audio = ?, sort_order = ?, active = ? WHERE id = ?")
+                ->execute([$title, $sub, $price, $image, $video, $audio, $sort, $act, $id]);
         }
-        $back('Riquadro salvato.', 'slides');
+        $back($vid ? 'Video caricato: il monitor lo scarica e lo mostra entro 5 minuti.' : 'Riquadro salvato.', 'slides');
     }
 
     if ($action === 'save_settings') {
@@ -150,6 +171,8 @@ include __DIR__ . '/../includes/header.php';
 .qa-dot { display:inline-block; width:14px; height:14px; border-radius:50%; vertical-align:middle; }
 .qa-thumb { width:84px; height:56px; object-fit:cover; border-radius:6px; background:#ddd; display:block; }
 .qa-note { font-size:.9rem; color:var(--text-secondary); }
+.qa-badge { display:inline-block; margin-top:4px; font-size:.75rem; color:var(--text-secondary); }
+.qa-progress { font-size:.88rem; color:var(--text-secondary); } .qa-progress progress { width:160px; vertical-align:middle; }
 .qa-slide { border:1px solid var(--border, #eee); border-radius:10px; padding:12px; margin-bottom:12px; display:grid; grid-template-columns:100px 1fr; gap:14px; }
 @media (max-width:700px){ .qa-slide { grid-template-columns:1fr; } .qa-wide { overflow-x:auto; } }
 </style>
@@ -228,47 +251,92 @@ include __DIR__ . '/../includes/header.php';
 <div class="card mt-lg" id="slides">
     <div class="card-header"><h2><i class="fas fa-images"></i> Riquadri prodotti sul monitor</h2></div>
     <div class="card-body">
-        <p class="qa-note">I riquadri attivi ruotano sul monitor. Usa foto orizzontali (es. 1600×1000).</p>
+        <p class="qa-note">I riquadri attivi ruotano sul monitor. Usa foto orizzontali (es. 1600×1000) oppure un video orizzontale
+            (MP4 H.264 o WebM, 16:9, massimo <?= QUEUE_VIDEO_MAX_MB ?> MB). Il monitor scarica il video per intero prima di mostrarlo,
+            poi lo riproduce fino alla fine prima di passare al riquadro successivo. Sui video titolo, prezzo e descrizione sono facoltativi.</p>
         <?php foreach ($slides as $s): ?>
-            <form method="POST" enctype="multipart/form-data" class="qa-slide">
+            <form method="POST" enctype="multipart/form-data" class="qa-slide qa-upload">
                 <input type="hidden" name="action" value="save_slide"><input type="hidden" name="id" value="<?= (int) $s['id'] ?>">
-                <div><?php if ($s['image_path']): ?><img class="qa-thumb" src="<?= $v($s['image_path']) ?>" alt=""><?php else: ?><span class="qa-thumb"></span><?php endif; ?></div>
+                <div>
+                    <?php if ($s['video_path']): ?>
+                        <video class="qa-thumb" src="<?= $v($s['video_path']) ?>#t=1" muted preload="metadata" playsinline></video>
+                        <span class="qa-badge"><i class="fas fa-film"></i> Video</span>
+                    <?php elseif ($s['image_path']): ?><img class="qa-thumb" src="<?= $v($s['image_path']) ?>" alt="">
+                    <?php else: ?><span class="qa-thumb"></span><?php endif; ?>
+                </div>
                 <div>
                     <div class="form-row">
-                        <div class="form-group"><label class="form-label">Titolo</label><input type="text" name="title" maxlength="120" class="form-control" value="<?= $v($s['title']) ?>" required></div>
+                        <div class="form-group"><label class="form-label">Titolo</label><input type="text" name="title" maxlength="120" class="form-control" value="<?= $v($s['title']) ?>"></div>
                         <div class="form-group"><label class="form-label">Prezzo / etichetta</label><input type="text" name="price" maxlength="40" class="form-control" value="<?= $v($s['price']) ?>" placeholder="€ 3,50"></div>
                     </div>
                     <div class="form-group"><label class="form-label">Descrizione</label><input type="text" name="subtitle" maxlength="255" class="form-control" value="<?= $v($s['subtitle']) ?>"></div>
                     <div class="form-row" style="align-items:center">
-                        <div class="form-group"><label class="form-label">Nuova foto</label><input type="file" name="image" accept="image/*" class="form-control"></div>
+                        <div class="form-group"><label class="form-label"><?= $s['image_path'] ? 'Nuova foto' : 'Foto' ?></label><input type="file" name="image" accept="image/*" class="form-control"></div>
+                        <div class="form-group"><label class="form-label"><?= $s['video_path'] ? 'Nuovo video' : 'Video' ?></label><input type="file" name="video" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" class="form-control"></div>
                         <div class="form-group" style="max-width:110px"><label class="form-label">Ordine</label><input type="number" name="sort_order" class="form-control" value="<?= (int) $s['sort_order'] ?>"></div>
                     </div>
                     <label><input type="checkbox" name="active" <?= $s['active'] ? 'checked' : '' ?>> Attivo</label>
+                    &nbsp; <label title="Si azzera da solo quando viene chiamato un numero"><input type="checkbox" name="video_audio" <?= $s['video_audio'] ? 'checked' : '' ?>> Audio del video</label>
                     <?php if ($s['image_path']): ?>&nbsp; <label><input type="checkbox" name="remove_image"> Togli la foto</label><?php endif; ?>
-                    <div class="mt-md" style="display:flex;gap:8px">
+                    <?php if ($s['video_path']): ?>&nbsp; <label><input type="checkbox" name="remove_video"> Togli il video</label><?php endif; ?>
+                    <div class="mt-md" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                         <button class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Salva</button>
                         <button class="btn btn-outline btn-sm" style="color:var(--danger)" name="delete" value="1" formnovalidate onclick="return confirm('Eliminare questo riquadro?')"><i class="fas fa-trash"></i> Elimina</button>
+                        <span class="qa-progress"></span>
                     </div>
                 </div>
             </form>
         <?php endforeach; ?>
         <h3 style="font-size:1rem" class="mt-lg">Nuovo riquadro</h3>
-        <form method="POST" enctype="multipart/form-data">
+        <form method="POST" enctype="multipart/form-data" class="qa-upload">
             <input type="hidden" name="action" value="add_slide">
             <div class="form-row">
-                <div class="form-group"><label class="form-label">Titolo</label><input type="text" name="title" maxlength="120" class="form-control" placeholder="Focaccia del giorno" required></div>
+                <div class="form-group"><label class="form-label">Titolo</label><input type="text" name="title" maxlength="120" class="form-control" placeholder="Focaccia del giorno"></div>
                 <div class="form-group"><label class="form-label">Prezzo / etichetta</label><input type="text" name="price" maxlength="40" class="form-control" placeholder="€ 3,50 o NOVITÀ"></div>
             </div>
             <div class="form-group"><label class="form-label">Descrizione</label><input type="text" name="subtitle" maxlength="255" class="form-control" placeholder="Pomodorini, origano e olio extravergine"></div>
             <div class="form-row">
                 <div class="form-group"><label class="form-label">Foto</label><input type="file" name="image" accept="image/*" class="form-control"></div>
+                <div class="form-group"><label class="form-label">oppure Video (max <?= QUEUE_VIDEO_MAX_MB ?> MB)</label><input type="file" name="video" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" class="form-control"></div>
                 <div class="form-group" style="max-width:110px"><label class="form-label">Ordine</label><input type="number" name="sort_order" class="form-control" value="<?= count($slides) + 1 ?>"></div>
             </div>
             <input type="hidden" name="active" value="1">
-            <button class="btn btn-success"><i class="fas fa-plus"></i> Aggiungi riquadro</button>
+            <label title="Si azzera da solo quando viene chiamato un numero"><input type="checkbox" name="video_audio"> Audio del video</label>
+            <div class="mt-md" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <button class="btn btn-success"><i class="fas fa-plus"></i> Aggiungi riquadro</button>
+                <span class="qa-progress"></span>
+            </div>
         </form>
     </div>
 </div>
+<script>
+// Videos are big: upload them with a progress bar instead of a page that looks frozen.
+document.querySelectorAll('form.qa-upload').forEach(form => form.addEventListener('submit', e => {
+    const vid = form.querySelector('input[name=video]');
+    if ((e.submitter && e.submitter.name === 'delete') || !vid || !vid.files.length) return;
+    e.preventDefault();
+    if (vid.files[0].size > <?= QUEUE_VIDEO_MAX_MB ?> * 1048576) {
+        alert('Il video è troppo grande: massimo <?= QUEUE_VIDEO_MAX_MB ?> MB.');
+        return;
+    }
+    const out = form.querySelector('.qa-progress');
+    form.querySelectorAll('button').forEach(b => b.disabled = true);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', location.pathname);
+    xhr.upload.onprogress = ev => {
+        if (!ev.lengthComputable) return;
+        const p = Math.round(ev.loaded * 100 / ev.total);
+        out.innerHTML = '<progress max="100" value="' + p + '"></progress> Caricamento video ' + p + '% — non chiudere la pagina';
+    };
+    xhr.onload = () => { location.href = '/admin/index.php#slides'; location.reload(); };
+    xhr.onerror = () => {
+        out.textContent = 'Caricamento non riuscito: controlla la connessione e riprova.';
+        form.querySelectorAll('button').forEach(b => b.disabled = false);
+    };
+    out.textContent = 'Caricamento video…';
+    xhr.send(new FormData(form));
+}));
+</script>
 
 <div class="card mt-lg" id="settings">
     <div class="card-header"><h2><i class="fas fa-sliders-h"></i> Impostazioni</h2></div>

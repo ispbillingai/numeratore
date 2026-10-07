@@ -9,6 +9,9 @@ at the user's request. Integrating it into other projects is a later decision of
 - `queue/totem.php`, `queue/monitor.php` (no login, `?k=` = `settings.queue.key`), `queue/operator.php`.
 - `api/queue.php` — state, feed (weather/news/tiles), take, next/recall/call.
 - `admin/index.php` (Eliminacode admin), `admin/users.php`, `admin/activity.php`.
+- Monitor tiles (`queue_slides`) take a photo or a video (`video_path`, MP4/WebM/MOV up to
+  `QUEUE_VIDEO_MAX_MB` = 200, limits raised in `.htaccess`). The monitor downloads each video in full as a blob
+  before showing it, plays it to the end, then moves on; `video_audio` = its own sound, muted during a call.
 - `admin/monitor-launcher.php`: downloads "Monitor eliminacode.bat" (Chrome/Edge kiosk with
   `--autoplay-policy=no-user-gesture-required`, own profile) so the monitor's sound is on without a click.
   Browsers never let a page turn sound on by itself; in a normal browser the first touch/key does it.

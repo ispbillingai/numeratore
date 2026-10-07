@@ -72,6 +72,8 @@ html,body { margin:0; height:100%; background:linear-gradient(160deg,#0c4a6e 0%,
 .slide { position:absolute; inset:0; opacity:0; transition:opacity 1s; display:flex; flex-direction:column; justify-content:flex-end; }
 .slide.on { opacity:1; }
 .slide .img { position:absolute; inset:0; background-size:cover; background-position:center; }
+.slide video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#000; }
+.slide video:not([src]) { display:none; }
 .slide .cap { position:relative; padding:3vh 2vw 2.6vh; background:linear-gradient(transparent, rgba(0,0,0,.85) 45%); }
 .slide .ttl { font-size:5.4vh; font-weight:800; line-height:1.05; }
 .slide .stl { font-size:2.6vh; color:rgba(255,255,255,.88); margin-top:.6vh; }
@@ -212,6 +214,7 @@ function showCall(s) {
     q('callWho').textContent = s.name;
     q('callNum').textContent = s.current;
     q('call').classList.add('show');
+    muteVideosForCall();
     chime(); speak(s.current, s.name);
     const el = document.querySelector('.svc[data-id="' + s.id + '"]');
     if (el) el.classList.add('flash');
@@ -243,25 +246,86 @@ async function poll() {
 
 /* ---------- Product tiles ---------- */
 let slides = [], slideIdx = 0, slideSecs = 8, slideTimer = null, slidesSig = '';
+// Tile videos are downloaded in full first (blob in memory), then played from there:
+// no buffering on the TV and no traffic on every loop. A failed download retries in a minute.
+const videoBlobs = {};
+let callMuteUntil = 0;
+function preloadVideo(url) {
+    if (videoBlobs[url]) return;
+    const e = videoBlobs[url] = { url: null };
+    fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); })
+        .then(b => { e.url = URL.createObjectURL(b); attachVideo(url); })
+        .catch(() => { delete videoBlobs[url]; setTimeout(() => { if (slides.some(s => s.video === url)) preloadVideo(url); }, 60000); });
+}
+function attachVideo(url) {
+    document.querySelectorAll('.slide video[data-src]').forEach(v => {
+        if (v.dataset.src !== url || v.src) return;
+        v.src = videoBlobs[url].url;
+        const els = [...document.querySelectorAll('.slide')];
+        if (els.indexOf(v.closest('.slide')) === slideIdx) showSlide(slideIdx);
+    });
+}
 function renderSlides() {
     const box = q('slides');
+    clearTimeout(slideTimer);
+    const keep = new Set(slides.map(s => s.video).filter(Boolean));
+    Object.keys(videoBlobs).forEach(u => { if (!keep.has(u)) { if (videoBlobs[u].url) URL.revokeObjectURL(videoBlobs[u].url); delete videoBlobs[u]; } });
     if (!slides.length) { box.innerHTML = '<div class="placeholder">Aggiungi i prodotti da mostrare in Amministrazione › Eliminacode</div>'; return; }
     box.innerHTML = slides.map((s, i) => `
-        <div class="slide${s.image ? '' : ' noimg'}${i === 0 ? ' on' : ''}">
+        <div class="slide${s.image || s.video ? '' : ' noimg'}${i === 0 ? ' on' : ''}">
             <div class="img" ${s.image ? `style="background-image:url('${esc(s.image)}')"` : ''}></div>
+            ${s.video ? `<video class="vid" data-src="${esc(s.video)}" muted playsinline preload="auto"${slides.length === 1 ? ' loop' : ''}></video>` : ''}
             ${s.price ? `<div class="price">${esc(s.price)}</div>` : ''}
-            <div class="cap"><div class="ttl">${esc(s.title)}</div>${s.subtitle ? `<div class="stl">${esc(s.subtitle)}</div>` : ''}</div>
+            ${s.title || s.subtitle ? `<div class="cap">${s.title ? `<div class="ttl">${esc(s.title)}</div>` : ''}${s.subtitle ? `<div class="stl">${esc(s.subtitle)}</div>` : ''}</div>` : ''}
         </div>`).join('') + (slides.length > 1 ? '<div class="dots">' + slides.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('') + '</div>' : '');
-    slideIdx = 0;
-    clearInterval(slideTimer);
-    if (slides.length > 1) slideTimer = setInterval(nextSlide, slideSecs * 1000);
+    slides.forEach(s => { if (s.video) { if (videoBlobs[s.video] && videoBlobs[s.video].url) attachVideo(s.video); else preloadVideo(s.video); } });
+    showSlide(0);
 }
-function nextSlide() {
-    const els = document.querySelectorAll('.slide'), dots = document.querySelectorAll('.dots i');
+/** A video tile still downloading is skipped while there is something else to show. */
+function ready(el) {
+    const v = el.querySelector('video');
+    return !v || !!v.src;
+}
+function showSlide(i) {
+    clearTimeout(slideTimer);
+    const els = [...document.querySelectorAll('.slide')], dots = document.querySelectorAll('.dots i');
     if (!els.length) return;
-    els[slideIdx].classList.remove('on'); if (dots[slideIdx]) dots[slideIdx].classList.remove('on');
-    slideIdx = (slideIdx + 1) % els.length;
-    els[slideIdx].classList.add('on'); if (dots[slideIdx]) dots[slideIdx].classList.add('on');
+    for (let n = 0; n < els.length && !ready(els[i]); n++) i = (i + 1) % els.length;
+    slideIdx = i;
+    els.forEach((el, k) => {
+        el.classList.toggle('on', k === i);
+        if (dots[k]) dots[k].classList.toggle('on', k === i);
+        const v = el.querySelector('video');
+        if (v && k !== i) { v.pause(); v.onended = null; }
+    });
+    const next = () => showSlide((i + 1) % els.length);
+    const v = els[i].querySelector('video');
+    if (v && v.src) {
+        try { v.currentTime = 0; } catch (e) {}
+        playVideo(v, slides[i]);
+        if (els.length > 1) {
+            v.onended = next;
+            // Safety net if "ended" never comes (stalled or broken file).
+            slideTimer = setTimeout(next, ((isFinite(v.duration) && v.duration > 0 ? v.duration : 600) + 5) * 1000);
+        }
+        return;
+    }
+    if (els.length > 1) slideTimer = setTimeout(next, slideSecs * 1000);
+}
+function playVideo(v, s) {
+    v.muted = !(s && s.audio) || Date.now() < callMuteUntil;
+    // Sound needs the autoplay permission (monitor launcher); without it the video still plays, muted.
+    v.play().catch(() => { v.muted = true; v.play().catch(() => {}); });
+}
+/** The video's own sound goes quiet while a number is called (chime + voice). */
+function muteVideosForCall() {
+    callMuteUntil = Date.now() + 7000;
+    document.querySelectorAll('.slide video').forEach(v => v.muted = true);
+    setTimeout(() => {
+        if (Date.now() < callMuteUntil) return;
+        const v = document.querySelectorAll('.slide')[slideIdx]?.querySelector('video');
+        if (v && slides[slideIdx] && slides[slideIdx].audio) v.muted = false;
+    }, 7100);
 }
 
 /* ---------- Weather ---------- */
