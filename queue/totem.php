@@ -42,7 +42,7 @@ html,body { margin:0; height:100%; background:linear-gradient(160deg,#f0f9ff 0%,
 .powered img { height:3.2vh; width:auto; display:block; }
 h1 { font-size:5.5vh; margin:1vh 0 0; font-weight:800; }
 .sub { color:var(--muted); font-size:2.6vh; margin-top:.8vh; }
-.services { flex:1; width:100%; max-width:1100px; display:grid; gap:2.5vh; align-content:center;
+.services { flex:1; width:100%; max-width:1400px; display:grid; gap:2.5vh; align-content:center;
             grid-template-columns:repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
 .svc { border:0; border-radius:28px; color:#fff; cursor:pointer; padding:5vh 3vw; min-height:20vh;
        display:flex; align-items:center; gap:3vw; text-align:left; font-family:inherit;
@@ -50,7 +50,8 @@ h1 { font-size:5.5vh; margin:1vh 0 0; font-weight:800; }
 .svc:active { transform:scale(.97); }
 .svc .letter { font-size:9vh; font-weight:800; width:13vh; height:13vh; border-radius:50%; background:rgba(255,255,255,.2);
                display:flex; align-items:center; justify-content:center; flex:none; }
-.svc .name { font-size:5vh; font-weight:800; line-height:1.1; }
+.svc > span:last-child { min-width:0; }
+.svc .name { font-size:min(5vh, 3.4vw); font-weight:800; line-height:1.1; overflow-wrap:break-word; }
 .svc .wait { font-size:2.4vh; opacity:.9; margin-top:.6vh; }
 .svc[disabled] { opacity:.6; }
 .empty { color:var(--muted); font-size:3vh; text-align:center; }
